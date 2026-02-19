@@ -1,0 +1,18 @@
+﻿using UnityEngine;
+
+public class PopupManager : MonoBehaviour
+{
+    static PopupManager instance;
+    public static PopupManager Instance
+        { 
+        get 
+        { 
+            if (instance == null)
+            {
+                
+            }
+            return instance; 
+        } 
+    }
+
+}
