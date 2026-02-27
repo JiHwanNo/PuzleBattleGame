@@ -18,7 +18,7 @@ namespace Puzzle.Core
             Panel = null;
         }
 
-        public void Update(GameInput input) 
+        public void Update(GridPos input) 
         {
         }
     }

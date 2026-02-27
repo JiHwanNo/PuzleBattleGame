@@ -41,39 +41,21 @@ namespace Puzzle.Core
     // 값 타입이므로 데이터 전달 및 복사에 유리하며, 외부(View)에서 세팅해서 넘겨주기 좋습니다.
     public struct GameSpec
     {
-        public ushort[,] boards;           //0.5칸씩 생성한다. 
+        public ushort[,] boards;            //0.5칸씩 생성한다. 
 
+        public int timeSec;                 //0이면 시간제는 아니다. 
 
-        public int timeSec;             //0이면 시간제는 아니다. 
+        public int move;                    //0이면 턴제는 아니다.
 
-        public int move;                //0이면 턴제는 아니다.
+        public string[] blockTypes;         //BlockType-BlockId
 
-        public string[] blockTypes;     //BlockType-BlockId
+        public ushort inputType;            //InputType Enum의 Index
 
-        public ushort inputType;        //InputType Enum의 Index
-
-        public ushort puzzleMode;       //PuzzleType Enum의 Index
+        public ushort puzzleMode;           //PuzzleType Enum의 Index
 
     }
 
-    public struct GameInput
-    {
-        public GridPos From { get; }
-        public GridPos To { get; }
-        public InputType InputType { get; }
-
-        /// <param name="from">선택한 위치</param>
-        /// <param name="to">이동한 위치</param>
-        /// <param name="type">조작 타입</param>
-        public GameInput(GridPos from, GridPos to, InputType type)
-        {
-            From = from;
-            To = to;
-            InputType = type;
-        }
-    }
-
-
+ 
     public enum PuzzleType
     {
         None = 0,
@@ -112,9 +94,8 @@ namespace Puzzle.Core
     public enum InputType
     {
         None = 0,
-        Swap,                      // 두 블럭의 위치를 바꾸는 입력
-        Link,                      // 두 블럭을 연결하는 입력 (예: 선으로 이어서 제거하는 퍼즐)
-        End,                       // 입력의 종료를 알리는 타입 (예: 드래그 끝, 터치 해제 등)
+        Swap,                       // 두 블럭의 위치를 바꾸는 입력
+        Link,                       // 두 블럭을 연결하는 입력 (예: 선으로 이어서 제거하는 퍼즐)
     }
 
     // (보너스) 로직 처리를 위해 방향을 명시할 때 쓰기 좋은 Enum
@@ -122,21 +103,21 @@ namespace Puzzle.Core
     {
         None = 0,
         Up,
-        Down, 
-        Left, 
+        Down,
+        Left,
         Right,
-        UpLeft, 
-        UpRight, 
-        DownLeft, 
+        UpLeft,
+        UpRight,
+        DownLeft,
         DownRight
     }
 
     public enum ClearCondition
     {
         None = 0,
-        
+
         GetTargetBlocks,           // 특정 블럭 획득 (예: 목표 지점에 도달)   
-        
+
     }
 
 }
