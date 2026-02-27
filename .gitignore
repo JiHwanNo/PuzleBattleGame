@@ -2,3 +2,16 @@
 /Temp
 /Logs
 /.vs
+/.vs
+/.suo
+/.user
+/.userprefs
+
+# 유니티 로컬 사용자 설정
+/UserSettings
+
+# 프로젝트 파일 (보통은 직접 관리하지 않고 유니티가 자동 생성함)
+/.csproj
+/.sln
+/.unityproj
+/.vs
