@@ -7,6 +7,7 @@ namespace Puzzle.Core
         public CellType CellType { get; set; }
         public PuzzleBlock Block { get; set; } // null일 경우 그 위엔 아무것도 없음을 의미
         public PuzzlePanel Panel { get; set; }
+
         public bool isLocked;
 
         public PuzzleCell(GridPos position)

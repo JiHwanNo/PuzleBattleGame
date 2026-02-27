@@ -41,17 +41,21 @@ namespace Puzzle.Core
     // 값 타입이므로 데이터 전달 및 복사에 유리하며, 외부(View)에서 세팅해서 넘겨주기 좋습니다.
     public struct GameSpec
     {
-        public int Width { get; }
-        public int Height { get; }
-        public int[,] BoardData; // 2D 배열 형태의 초기 맵 데이터
+        public ushort[,] boards;           //0.5칸씩 생성한다. 
 
-        public GameSpec(int width, int height, int[,] boardData)
-        {
-            Width = width;
-            Height = height;
-            BoardData = boardData;
-        }
+
+        public int timeSec;             //0이면 시간제는 아니다. 
+
+        public int move;                //0이면 턴제는 아니다.
+
+        public string[] blockTypes;     //BlockType-BlockId
+
+        public ushort inputType;        //InputType Enum의 Index
+
+        public ushort puzzleMode;       //PuzzleType Enum의 Index
+
     }
+
     public struct GameInput
     {
         public GridPos From { get; }
@@ -126,4 +130,13 @@ namespace Puzzle.Core
         DownLeft, 
         DownRight
     }
+
+    public enum ClearCondition
+    {
+        None = 0,
+        
+        GetTargetBlocks,           // 특정 블럭 획득 (예: 목표 지점에 도달)   
+        
+    }
+
 }

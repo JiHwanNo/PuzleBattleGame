@@ -1,6 +1,7 @@
-using UnityEngine;
-
-public class PuzzlePanel
+namespace Puzzle.Core
 {
-    
+    public class PuzzlePanel
+    {
+
+    }
 }

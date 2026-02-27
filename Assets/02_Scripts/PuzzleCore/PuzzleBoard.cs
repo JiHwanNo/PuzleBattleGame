@@ -44,6 +44,8 @@ namespace Puzzle.Core
                     Task.Run(() => { ProcessInput(inputsToProcess); });
                 }
             }
+
+            // 유저가 선택해. 유저가 끝내면 보드를 판정한다.
         }
 
         void ProcessInput(Queue<GameInput> inputs)
