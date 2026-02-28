@@ -1,0 +1,54 @@
+{
+  "rules": [
+    {
+      "_comment": "사각형 3매치룰",
+      "ruleId": "ThreeMatch_Quadrangle",
+      "puzzleType": 1,
+      "boardShape": 1
+    },
+    {
+      "_comment_Hexagon": "육각형 링크룰",
+      "ruleId": "Link_Hexagon",
+      "puzzleType": 2,
+      "boardShape": 2
+    }
+  ],
+
+  "blocks": [
+    {
+      "_comment": "기본 빨간색 블럭",
+      "blockId": "100-1",
+      "inputType": 1,
+      "prefabName": "Block_100-1",
+      "life": 1
+    },
+    {
+      "_comment": "기본 빨간색 파란색",
+      "blockId": "100-2",
+      "inputType": 1,
+      "prefabName": "Block_100-2",
+      "life": 1
+    },
+    {
+      "_comment": "기본 빨간색 노락색",
+      "blockId": "100-3",
+      "inputType": 1,
+      "prefabName": "Block_100-3",
+      "life": 1
+    },
+    {
+      "_comment": "기본 빨간색 초록색",
+      "blockId": "100-4",
+      "inputType": 1,
+      "prefabName": "Block_100-4",
+      "life": 1
+    },
+    {
+      "_comment": "기본 빨간색 보라색",
+      "blockId": "100-5",
+      "inputType": 1,
+      "prefabName": "Block_100-5",
+      "life": 1
+    }
+  ]
+}
