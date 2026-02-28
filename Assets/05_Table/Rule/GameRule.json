@@ -19,35 +19,35 @@
       "_comment": "기본 빨간색 블럭",
       "blockId": "100-1",
       "inputType": 1,
-      "prefabName": "Block_100-1",
+      "destroyType": 2,
       "life": 1
     },
     {
       "_comment": "기본 빨간색 파란색",
       "blockId": "100-2",
       "inputType": 1,
-      "prefabName": "Block_100-2",
+      "destroyType": 2,
       "life": 1
     },
     {
       "_comment": "기본 빨간색 노락색",
       "blockId": "100-3",
       "inputType": 1,
-      "prefabName": "Block_100-3",
+      "destroyType": 2,
       "life": 1
     },
     {
       "_comment": "기본 빨간색 초록색",
       "blockId": "100-4",
       "inputType": 1,
-      "prefabName": "Block_100-4",
+      "destroyType": 2,
       "life": 1
     },
     {
       "_comment": "기본 빨간색 보라색",
       "blockId": "100-5",
       "inputType": 1,
-      "prefabName": "Block_100-5",
+      "destroyType": 2,
       "life": 1
     }
   ]
