@@ -45,3 +45,4 @@ bld/
 *.csproj
 /.csproj
 .csproj/
+/UserSettings
