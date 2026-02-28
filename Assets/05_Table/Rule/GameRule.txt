@@ -1,0 +1,7 @@
+{
+  "ruleId": "Rule_Basic_3Match_Turn",
+  "puzzleType": 1,
+  "boardShape": 1,
+  "gameOverCondition": 1,
+  "clearCondition": 2
+}

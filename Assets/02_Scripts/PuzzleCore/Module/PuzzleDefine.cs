@@ -120,4 +120,11 @@ namespace Puzzle.Core
 
     }
 
+    public enum BoardShape
+    {
+        None,
+
+        Quadrangle,                 //사각형
+        Hexagon,                    //육각형
+    }
 }
