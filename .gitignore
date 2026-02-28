@@ -43,3 +43,5 @@ bld/
 *.dwlt
 /UserSettings
 *.csproj
+/.csproj
+.csproj/
