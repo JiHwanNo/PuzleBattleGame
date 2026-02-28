@@ -39,3 +39,7 @@ bld/
 
 # Visual Studio
 .vs/
+*.sln
+*.dwlt
+/UserSettings
+*.csproj
