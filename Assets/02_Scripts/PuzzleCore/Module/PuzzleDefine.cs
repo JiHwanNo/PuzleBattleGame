@@ -40,13 +40,7 @@ namespace Puzzle.Core
     // [수정됨] JSON 데이터를 파싱하기 위한 데이터 구조체(struct)들
     // ==========================================================
 
-    [Serializable]
-    public struct GameSpec
-    {
-        public RuleData gameMode;                   // 어떤 게임 기능 데이터
-        public List<BlockData> blocks;              // 어떤 블럭 기능 데이터
-    }
-
+   
     [Serializable]
     public struct RuleData
     {

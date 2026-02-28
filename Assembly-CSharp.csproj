@@ -69,6 +69,7 @@
     <Compile Include="Assets\02_Scripts\LobbyMain.cs" />
     <Compile Include="Assets\02_Scripts\PuzzleCore\Module\PuzzleBoard.cs" />
     <Compile Include="Assets\02_Scripts\PuzzleCore\Module\PuzzleDefine.cs" />
+    <Compile Include="Assets\02_Scripts\PuzzleCore\Module\GameSpecReport.cs" />
     <Compile Include="Assets\02_Scripts\PopupManager.cs" />
     <Compile Include="Assets\02_Scripts\PuzzleCore\Controller\PuzzleGameController.cs" />
   </ItemGroup>

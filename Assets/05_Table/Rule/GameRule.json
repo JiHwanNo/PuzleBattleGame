@@ -1,13 +1,13 @@
 {
   "rules": [
     {
-      "_comment": "사각형 3매치룰",
+      "_comment": "사각형 3매치 룰",
       "ruleId": "ThreeMatch_Quadrangle",
       "puzzleType": 1,
       "boardShape": 1
     },
     {
-      "_comment_Hexagon": "육각형 링크룰",
+      "_comment_Hexagon": "육각형 링크 룰",
       "ruleId": "Link_Hexagon",
       "puzzleType": 2,
       "boardShape": 2
