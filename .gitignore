@@ -46,3 +46,6 @@ bld/
 *.UserSettings
 /.UserSettings
 .UserSettings/
+/.vs
+*.csproj
+/UserSettings
