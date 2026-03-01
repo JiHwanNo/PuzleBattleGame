@@ -1,14 +1,10 @@
 fileFormatVersion: 2
 guid: edcbbbb78d12fd74ab978925a30ca150
-AssetOrigin:
-  serializedVersion: 1
-  productId: 203444
-  packageName: Puzzle Blocks #7
-  packageVersion: 1.0
-  assetPath: Assets/007_PuzzleBlocks#7/Type1/BL_1_256.png
-  uploadId: 453927
 TextureImporter:
-  internalIDToNameTable: []
+  internalIDToNameTable:
+  - first:
+      213: 2395767554990393822
+    second: Block_100-1_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -72,7 +68,7 @@ TextureImporter:
   ignorePngGamma: 0
   applyGammaDecoding: 0
   swizzle: 50462976
-  cookieLightType: 1
+  cookieLightType: 0
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
@@ -128,7 +124,29 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   spriteSheet:
     serializedVersion: 2
-    sprites: []
+    sprites:
+    - serializedVersion: 2
+      name: Block_100-1_0
+      rect:
+        serializedVersion: 2
+        x: 4
+        y: 4
+        width: 248
+        height: 248
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ed9cb9fd5e97f3120800000000000000
+      internalID: 2395767554990393822
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
@@ -142,7 +160,8 @@ TextureImporter:
     secondaryTextures: []
     spriteCustomMetadata:
       entries: []
-    nameFileIdTable: {}
+    nameFileIdTable:
+      Block_100-1_0: 2395767554990393822
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

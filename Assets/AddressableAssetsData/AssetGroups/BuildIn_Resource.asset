@@ -16,27 +16,27 @@ MonoBehaviour:
   m_GUID: 3c204a621933ec14f9306ea4f6c9c0d2
   m_SerializeEntries:
   - m_GUID: 0186b3af00425a143b06f69c2886bbf0
-    m_Address: Block_100-2
+    m_Address: Assets/04_Resources/Block/Block_100-2.png
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 4f384d65b6014d640a223efad391e5bb
-    m_Address: Block_100-5
+    m_Address: Assets/04_Resources/Block/Block_100-5.png
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 5175517165f5afb4ea0805d78a9fb0ed
-    m_Address: Block_100-3
+    m_Address: Assets/04_Resources/Block/Block_100-3.png
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8517c53393d77b543bbf98d7a6732005
-    m_Address: Block_100-4
+    m_Address: Assets/04_Resources/Block/Block_100-4.png
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: edcbbbb78d12fd74ab978925a30ca150
-    m_Address: Block_100-1
+    m_Address: Assets/04_Resources/Block/Block_100-1.png
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
