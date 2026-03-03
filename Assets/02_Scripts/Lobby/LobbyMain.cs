@@ -7,4 +7,11 @@ public class LobbyMain : MonoBehaviour
         var popupManager = PopupManager.Instance;
     }
 
+
+
+    void OnClickStartStage()
+    {
+        Debug.Log("On Click Event StartStage");
+    }
+
 }
