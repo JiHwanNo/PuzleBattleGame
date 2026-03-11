@@ -21,20 +21,20 @@ public class PuzzleBlockView : MonoBehaviour
         if (spriteRenderer != null)
         {
             // 테스트를 위해 BlockType에 따라 색상을 다르게 지정합니다.
-            switch (_blockData.Type) //
+            switch (_blockData.GetBlockId()) //
             {
-                case BlockType.Normal: //
-                    spriteRenderer.color = Color.white;
-                    break;
-                case BlockType.Item: //
-                    spriteRenderer.color = Color.red;
-                    break;
-                case BlockType.Target: //
-                    spriteRenderer.color = Color.blue;
-                    break;
-                default:
-                    spriteRenderer.color = Color.gray;
-                    break;
+                //case BlockType.Normal: //
+                //    spriteRenderer.color = Color.white;
+                //    break;
+                //case BlockType.Item: //
+                //    spriteRenderer.color = Color.red;
+                //    break;
+                //case BlockType.Target: //
+                //    spriteRenderer.color = Color.blue;
+                //    break;
+                //default:
+                //    spriteRenderer.color = Color.gray;
+                //    break;
             }
         }
     }

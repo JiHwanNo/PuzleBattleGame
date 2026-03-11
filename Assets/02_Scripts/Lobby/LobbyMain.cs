@@ -11,7 +11,7 @@ public class LobbyMain : MonoBehaviour
 
     void OnClickStartStage()
     {
-        Debug.Log("On Click Event StartStage");
+        Main.Instance.MoveScene(Main.Scene.GameScene);
     }
 
 }

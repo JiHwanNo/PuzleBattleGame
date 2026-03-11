@@ -49,12 +49,14 @@ namespace Puzzle.Core
     }
 
     [Serializable]
-    public struct BlockData
+    public class BlockData
     {
-        public string blockId;
-        public InputType inputType;
-        public DestroyType destroyType;
-        public int life;
+        public BlockType blockType;             // 블럭의 종류 (일반, 아이템, 목표 지점 등)
+        public string blockId;                  // 블럭의 고유 ID 
+        public InputType inputType;             // 블럭이 어떤 입력 방식으로 조작되는지
+        public DestroyType[] destroyType;       // 블럭이 어떤 방식으로 파괴되는지
+        public int life;                        // 블럭 체력 (파괴까지 필요한 타격 횟수)
+        public bool isDown;                     // 블럭이 밑으로 흐르는가?
     }
 
     // ==========================================================
@@ -144,4 +146,14 @@ namespace Puzzle.Core
         DownLeft,
         DownRight
     }
+
+    public enum ViewType
+    {
+        None = 0,
+        Destroy, // 블럭 파괴
+        Create,  // 블럭 새로 생성
+        Move,    // 블럭 이동
+        Land,    // 블럭 착지
+    }
+
 }

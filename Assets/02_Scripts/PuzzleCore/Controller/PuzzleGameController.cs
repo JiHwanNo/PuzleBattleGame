@@ -44,9 +44,7 @@ public class PuzzleGameController : MonoBehaviour
                 // 셀 생성
                 PuzzleCell cell = new PuzzleCell(pos);
 
-                // 무작위 블록 타입 선택 후 생성하여 셀에 배치
-                BlockType randomType = availableTypes[Random.Range(0, availableTypes.Length)];
-                cell.Block = new PuzzleBlock(randomType);
+                //cell.Block = new PuzzleBlock(randomType);
 
                 // 보드의 딕셔너리에 셀 추가
                 _board.Cells.Add(pos, cell);

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Puzzle.Core
 {
@@ -11,17 +12,23 @@ namespace Puzzle.Core
         private Queue<GridPos> inputQueue;
         // 유저가 조작하는 중. // 유저가 시작 // 유저가 끝
 
+        private List<View> views;
+
         private ulong frameCount;
 
         private bool isProcessing;
         
+
+        internal GameSpec gameSpec;
         // 사양서를 바탕으로 보드를 셋업합니다.
         public void Initialize(GameSpec spec)
         {
             inputQueue = new Queue<GridPos>();
             Cells = new Dictionary<GridPos, PuzzleCell>();
+            views = new List<View>();
             frameCount = 0;
             isProcessing = true;
+            gameSpec = spec;
         }
 
         // 컨트롤러에서 호출하는 입력 처리 및 게임 로직 업데이트 메서드입니다. 
@@ -33,6 +40,11 @@ namespace Puzzle.Core
 
         public void InputEnd()
         {
+            while (inputQueue.Count > 0)
+            {
+                GridPos input = inputQueue.Dequeue();
+                ProcessInput(input);
+            }
         }
 
         // 매 프레임마다 게임 상태를 업데이트하는 메서드입니다. (예: 블럭 낙하, 매치 검사 등)
@@ -76,5 +88,24 @@ namespace Puzzle.Core
 
             return null;
         }
+
+        // View를 추가하는 메서드
+        public void AddView(View view)
+        {
+            views.Add(view);
+        }
+
+        // View를 frame 기준 내림차순으로 반환하는 메서드
+        public List<View> GetViewsDescending()
+        {
+            return views.OrderByDescending(v => v.frame).ToList();
+        }
+    }
+
+    public class View
+    {
+        // 판정 프레임
+        public uint frame;
+        public ViewType type;
     }
 }

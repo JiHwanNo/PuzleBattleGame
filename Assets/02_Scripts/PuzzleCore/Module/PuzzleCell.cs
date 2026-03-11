@@ -1,3 +1,5 @@
+using Unity.VisualScripting;
+
 namespace Puzzle.Core
 {
     // 바닥(Panel)과 그 위의 물체(Block)를 모두 관리하는 컨테이너입니다.
@@ -18,8 +20,13 @@ namespace Puzzle.Core
             Panel = null;
         }
 
-        public void Update(GridPos input) 
+        public void Update(GridPos input)
         {
+            if (Block != null)
+                Block.Update();
+
+            if (Panel != null)
+                Panel.Update();
         }
     }
 }
