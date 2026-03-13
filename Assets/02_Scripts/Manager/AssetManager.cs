@@ -4,6 +4,9 @@ using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
+/// <summary>
+/// Addressables 시스템을 이용해 게임 에셋의 로드 및 인스턴스화를 관리하는 클래스입니다.
+/// </summary>
 public class AssetManager
 {
     #region Singleton
@@ -17,29 +20,39 @@ public class AssetManager
             return _instance;
         }
     }
-
     #endregion
+
+    /// <summary>
+    /// 에셋 로드 시 필요한 인자들을 담는 구조체입니다.
+    /// </summary>
+    /// <typeparam name="T">로드할 에셋의 타입</typeparam>
     public struct AssetArguments<T>
     {
-        /// <summary> 다운로드 그룹에 속한 어드레스 주소 </summary>
+        /// <summary> 어드레서블 에셋 주소 </summary>
         public string address;
-        /// <summary> 성공 시, 액션 </summary>
+        /// <summary> 로드 성공 시 호출될 콜백 </summary>
         public Action<T> successCallback;
-        /// <summary> 실패 시, 액션 </summary>
+        /// <summary> 로드 실패 시 호출될 콜백 </summary>
         public Action failedCallback;
     }
 
-    private Dictionary<string, object> addressablePacket = new Dictionary<string, object>();
+    /// <summary> 로드된 에셋들을 캐싱하는 딕셔너리 </summary>
+    private Dictionary<string, object> _addressablePacket = new Dictionary<string, object>();
 
+    /// <summary>
+    /// 에셋을 비동기적으로 로드합니다. 이미 캐싱된 경우 즉시 콜백을 호출합니다.
+    /// </summary>
+    /// <typeparam name="T">에셋 타입</typeparam>
+    /// <param name="args">로드 설정 인자</param>
     internal void LoadAssetAsync<T>(AssetArguments<T> args)
     {
-        if (string.IsNullOrEmpty(args.address) == true)
+        if (string.IsNullOrEmpty(args.address))
         {
-            Debug.LogError("AddressableDownloadAgrs is Null");
+            Debug.LogError("Addressable 주소가 비어 있습니다.");
             return;
         }
 
-        if (addressablePacket.TryGetValue(args.address, out object reObj))
+        if (_addressablePacket.TryGetValue(args.address, out object reObj))
         {
             args.successCallback?.Invoke((T)reObj);
             return;
@@ -49,22 +62,29 @@ public class AssetManager
         {
             if (op.Status == AsyncOperationStatus.Succeeded)
             {
-                // 캐시 선 등록
-                if (!addressablePacket.ContainsKey(args.address))
-                    addressablePacket.Add(args.address, op.Result);
+                if (!_addressablePacket.ContainsKey(args.address))
+                    _addressablePacket.Add(args.address, op.Result);
 
                 args.successCallback?.Invoke(op.Result);
             }
             else
-                Debug.LogError($"Not Load Asset {typeof(T)} Address : {args.address}");
+            {
+                Debug.LogError($"에셋 로드 실패! 타입: {typeof(T)}, 주소: {args.address}");
+                args.failedCallback?.Invoke();
+            }
         };
     }
 
+    /// <summary>
+    /// 프리팹 에셋을 비동기적으로 로드하고 실제 게임 오브젝트로 생성합니다.
+    /// </summary>
+    /// <param name="args">로드 설정 인자</param>
+    /// <param name="parent">생성될 오브젝트의 부모 Transform</param>
     internal void LoadGameObjectAsync(AssetArguments<GameObject> args, Transform parent = null)
     {
         if (string.IsNullOrEmpty(args.address))
         {
-            Debug.LogError("AddressableDownloadAgrs is Null");
+            Debug.LogError("Addressable 주소가 비어 있습니다.");
             args.failedCallback?.Invoke();
             return;
         }
@@ -74,50 +94,53 @@ public class AssetManager
         {
             if (loadedPrefab != null)
             {
-                // 프리팹을 부모 Transform 아래에 실제 게임 오브젝트로 생성합니다.
                 GameObject instance = UnityEngine.Object.Instantiate(loadedPrefab, parent);
                 originalSuccessCallback?.Invoke(instance);
             }
             else
             {
-                Debug.LogError($"Failed to instantiate Asset: {args.address}");
+                Debug.LogError($"프리팹 인스턴스화 실패! 주소: {args.address}");
                 args.failedCallback?.Invoke();
             }
         };
 
         LoadAssetAsync(args);
-
     }
 
-    internal GameObject LoadGameObject(string address, Transform parent = null)
-    {
-        GameObject gameObject = LoadAsset<GameObject>(address);
-        if (gameObject != null)
-        {
-            if (addressablePacket.ContainsKey(address) == false)
-                addressablePacket.Add(address, gameObject);
-            
-            return UnityEngine.Object.Instantiate(gameObject, parent);
-        }
-        else
-        {
-            Debug.LogError($"Failed to load Asset: {address}");
-            return null;
-        }
-    }
-
+    /// <summary>
+    /// 에셋을 동기적으로 로드합니다. (Wait Until Completion)
+    /// </summary>
+    /// <typeparam name="T">에셋 타입</typeparam>
+    /// <param name="address">에셋 주소</param>
+    /// <returns>로드된 에셋</returns>
     internal T LoadAsset<T>(string address)
     {
-        if (addressablePacket.TryGetValue(address, out object reObj))
+        if (_addressablePacket.TryGetValue(address, out object reObj))
             return (T)reObj;
-        else
+        
+        object newObj = Addressables.LoadAssetAsync<T>(address).WaitForCompletion();
+        if (newObj != null && !_addressablePacket.ContainsKey(address))
         {
-            object newObj = Addressables.LoadAssetAsync<T>(address).WaitForCompletion();
-            if (addressablePacket.ContainsKey(address) == false)
-                addressablePacket.Add(address, newObj);
-            return (T)newObj;
+            _addressablePacket.Add(address, newObj);
         }
-
+        return (T)newObj;
     }
 
+    /// <summary>
+    /// 프리팹을 동기적으로 로드하고 생성합니다.
+    /// </summary>
+    /// <param name="address">에셋 주소</param>
+    /// <param name="parent">부모 Transform</param>
+    /// <returns>생성된 게임 오브젝트</returns>
+    internal GameObject LoadGameObject(string address, Transform parent = null)
+    {
+        GameObject prefab = LoadAsset<GameObject>(address);
+        if (prefab != null)
+        {
+            return UnityEngine.Object.Instantiate(prefab, parent);
+        }
+        
+        Debug.LogError($"게임 오브젝트 로드 실패! 주소: {address}");
+        return null;
+    }
 }

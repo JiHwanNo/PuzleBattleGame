@@ -1,25 +1,42 @@
-using Unity.VisualScripting;
-
 namespace Puzzle.Core
 {
-    // 바닥(Panel)과 그 위의 물체(Block)를 모두 관리하는 컨테이너입니다.
+    /// <summary>
+    /// 퍼즐 보드의 한 칸(Cell)을 구성하는 컨테이너 클래스입니다.
+    /// 바닥면(Panel) 정보와 그 위에 놓인 물체(Block) 정보를 관리합니다.
+    /// </summary>
     public class PuzzleCell
     {
+        /// <summary> 보드 내에서 이 셀이 위치한 그리드 좌표 </summary>
         public GridPos Position { get; }
+        
+        /// <summary> 이 셀의 종류 (일반, 장애물 등) </summary>
         public CellType CellType { get; set; }
-        public PuzzleBlock Block { get; set; } // null일 경우 그 위엔 아무것도 없음을 의미
+        
+        /// <summary> 이 셀 위에 놓인 블럭 객체. null이면 빈 공간입니다. </summary>
+        public PuzzleBlock Block { get; set; }
+        
+        /// <summary> 이 셀의 바닥판(Panel) 객체. </summary>
         public PuzzlePanel Panel { get; set; }
 
+        /// <summary> 연출이나 특정 로직으로 인해 셀이 잠겼는지 여부 </summary>
         public bool isLocked;
 
+        /// <summary>
+        /// 새로운 셀을 지정된 위치에 생성합니다.
+        /// </summary>
+        /// <param name="position">이 셀의 그리드 좌표</param>
         public PuzzleCell(GridPos position)
         {
             Position = position;
-            CellType = CellType.Normal; // 기본 바닥
+            CellType = CellType.Normal; 
             Block = null;
             Panel = null;
         }
 
+        /// <summary>
+        /// 셀 내부의 블럭과 패널 상태를 업데이트합니다.
+        /// </summary>
+        /// <param name="input">업데이트와 관련된 입력 좌표 (필요 시 활용)</param>
         public void Update(GridPos input)
         {
             if (Block != null)
