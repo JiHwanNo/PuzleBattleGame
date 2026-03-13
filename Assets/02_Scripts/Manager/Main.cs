@@ -18,6 +18,10 @@ public class Main
 
     Scene curScene = Scene.None;
     
+    internal void Init(Scene startScene)
+    {
+        curScene = startScene;
+    }
 
     internal void MoveScene(Scene loadScene)
     {

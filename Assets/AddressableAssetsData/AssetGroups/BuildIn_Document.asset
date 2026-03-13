@@ -10,13 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
-  m_Name: BuildIn_Stage
+  m_Name: BuildIn_Document
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
-  m_GroupName: BuildIn_Stage
+  m_GroupName: BuildIn_Document
   m_GUID: 0abeb8d0b8f97d242b46ae45992619b3
   m_SerializeEntries:
   - m_GUID: 1015346fa46158c419b3fab20509aae8
-    m_Address: Stage
+    m_Address: Stage.json
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 296538ef62532ac4e93c1bab5a6be856
+    m_Address: GameRule.json
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0

@@ -41,9 +41,18 @@ namespace Puzzle.Core
     // ==========================================================
 
    
+
+    [Serializable]
+    public class GameRuleContainer
+    {
+        public List<RuleData> rules;
+        public List<BlockData> blocks;
+    }
+
     [Serializable]
     public struct RuleData
     {
+        public string ruleId;
         public PuzzleType puzzleType;
         public BoardShape boardShape;
     }
@@ -51,12 +60,10 @@ namespace Puzzle.Core
     [Serializable]
     public class BlockData
     {
-        public BlockType blockType;             // 블럭의 종류 (일반, 아이템, 목표 지점 등)
         public string blockId;                  // 블럭의 고유 ID 
         public InputType inputType;             // 블럭이 어떤 입력 방식으로 조작되는지
-        public DestroyType[] destroyType;       // 블럭이 어떤 방식으로 파괴되는지
+        public DestroyType destroyType;       // 블럭이 어떤 방식으로 파괴되는지 (단일 타입으로 수정)
         public int life;                        // 블럭 체력 (파괴까지 필요한 타격 횟수)
-        public bool isDown;                     // 블럭이 밑으로 흐르는가?
     }
 
     // ==========================================================

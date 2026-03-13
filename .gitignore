@@ -1,4 +1,4 @@
-# 유니티 빌드 및 임시 폴더 (대소문자 모두 무시)
+# Unity standard ignore
 /[Ll]ibrary/
 /[Tt]emp/
 /[Oo]bj/
@@ -6,28 +6,31 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
+/[Mm]emory[Cc]aptures/
 
-# Visual Studio 및 IDE 관련 캐시 폴더
+# Visual Studio
 .vs/
 .vscode/
-
-# 자동 생성되는 프로젝트 및 설정 파일들
 *.csproj
 *.unityproj
 *.sln
 *.suo
 *.user
 *.userprefs
+*.pidb
 *.rsuser
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
 
-# 빌드 결과물
-[Dd]ebug/
-[Dd]ebugPublic/
-[Rr]elease/
-[Rr]eleases/
-x64/
-x86/
-/.vs
-*.csproj
-Assembly-CSharp.csproj
-/UserSettings
+# Unity generated metadata
+sysinfo.txt
+*.apk
+*.unitypackage
+
+# OS generated files
+.DS_Store
+Thumbs.db
