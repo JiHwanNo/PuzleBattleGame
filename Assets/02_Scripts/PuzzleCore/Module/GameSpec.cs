@@ -7,10 +7,10 @@ namespace Puzzle.Core
     public class GameSpec
     {
         public StageData stageData;
-        public List<RuleData> rules;
+        public RuleData rules;
         public List<BlockData> blocks;
 
-        public RuleData GetRule(string ruleId) => rules?.Find(r => r.ruleId == ruleId) ?? default;
+        public RuleData GetRule() => rules;
         public BlockData GetBlock(string blockId) => blocks?.Find(b => b.blockId == blockId);
     }
 
