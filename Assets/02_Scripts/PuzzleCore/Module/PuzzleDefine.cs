@@ -130,8 +130,8 @@ namespace Puzzle.Core
     /// <summary> 셀의 속성 및 상태 </summary>
     public enum CellType
     {
-        Normal = 0,                 // 일반 바닥
-        Close = 1,                  // 막힌 구역
+        Close = 0,                  // 막힌 구역
+        Normal = 1,                 // 일반 바닥
         Lock = 2,                   // 로직상 잠긴 상태
     }
 

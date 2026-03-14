@@ -35,23 +35,7 @@ public class PuzzleBoardView : MonoBehaviour
     public void DrawBoard(PuzzleBoard boardData)
     {
         _board = boardData;
-
-        // 기존에 생성된 블럭 뷰들을 모두 제거하여 초기화
-        foreach (var view in _blockViews.Values)
-        {
-            if (view != null)
-                Destroy(view.gameObject);
-        }
-        _blockViews.Clear();
-
-        // 기존에 생성된 셀 뷰들을 모두 제거하여 초기화
-        foreach (var cellView in _cellViews.Values)
-        {
-            if (cellView != null)
-                Destroy(cellView.gameObject);
-        }
-        _cellViews.Clear();
-
+       
         if (_board.Cells == null) return;
 
         // 보드의 모든 셀을 순회하며 셀 및 블럭이 있는 경우 뷰를 생성

@@ -20,9 +20,9 @@
     {
       "x": 3,
       "y": 1,
-      "block_id": "0",
+      "block_id": "100-4",
       "panel_id": 0,
-      "cell_type": 0
+      "cell_type": 1
     },
 
     {
@@ -64,6 +64,27 @@
     {
       "x": 3,
       "y": 3,
+      "block_id": "100-2",
+      "panel_id": 0,
+      "cell_type": 1
+    },
+    {
+      "x": 1,
+      "y": 4,
+      "block_id": "100-1",
+      "panel_id": 0,
+      "cell_type": 1
+    },
+    {
+      "x": 2,
+      "y": 4,
+      "block_id": "100-1",
+      "panel_id": 0,
+      "cell_type": 1
+    },
+    {
+      "x": 3,
+      "y": 4,
       "block_id": "100-2",
       "panel_id": 0,
       "cell_type": 1
