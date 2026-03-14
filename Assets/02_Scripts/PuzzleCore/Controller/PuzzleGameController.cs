@@ -10,17 +10,14 @@ public class PuzzleGameController : MonoBehaviour
 
     void Start()
     {
-        // 1. StageInjection에서 설정된 GameSpec 가져오기
         GameSpec gameSpec = StageInjection.Instance.GetGameSpec();
 
         if (gameSpec == null || gameSpec.stageData == null)
         {
             Debug.LogWarning("GameSpec이 주입되지 않았거나 비어 있습니다! 테스트용 더미 데이터로 초기화합니다.");
             gameSpec = gameSpec ?? new GameSpec();
-            // 필요 시 여기서 테스트용 기본 설정을 추가할 수 있습니다.
         }
 
-        // 2. 코어 모델(Model) 생성 및 초기화
         _board = new PuzzleBoard();
         _board.Initialize(gameSpec);
 
@@ -35,17 +32,4 @@ public class PuzzleGameController : MonoBehaviour
         }
     }
 
-    // 테스트를 위한 더미 데이터 생성 메서드 (필요 시 호출 가능)
-    private void CreateDummyData(int width, int height)
-    {
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                GridPos pos = new GridPos(x, y);
-                PuzzleCell cell = new PuzzleCell(pos);
-                _board.Cells.Add(pos, cell);
-            }
-        }
-    }
 }

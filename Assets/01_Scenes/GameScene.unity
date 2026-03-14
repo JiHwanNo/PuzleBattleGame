@@ -163,6 +163,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f3810d2218374849be2ae6b1b77e6e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PuzzleBoardView
+  cellPrefab: {fileID: 5534488484369742590, guid: d02099b419b7a73479bc1cdd0c13bc9e, type: 3}
   blockPrefab: {fileID: 5534488484369742590, guid: 47222cc0d1dcb614e8719046d0e37555, type: 3}
   cellSize: 1
 --- !u!1 &863319420

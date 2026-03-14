@@ -44,7 +44,7 @@ public class StageInjection
         if (ruleAsset != null)
         {
             GameRuleContainer ruleContainer = JsonUtility.FromJson<GameRuleContainer>(ruleAsset.text);
-            _gameSpec.rules = ruleContainer.rules;
+            _gameSpec.rule = ruleContainer.rule;
             _gameSpec.blocks = ruleContainer.blocks;
         }
         else

@@ -19,15 +19,10 @@ public class LobbyMain : MonoBehaviour
     /// </summary>
     void OnClickStartStage()
     {
-        // Addressable 주소는 프로젝트 설정에 따라 다를 수 있습니다. 
-        // 여기서는 파일 이름(확장자 포함)으로 가정합니다.
         string rulePath = "GameRule.json";
         string stagePath = "Stage.json";
 
-        // 스테이지 및 규칙 데이터 준비
         StageInjection.Instance.MakeGameSpec(rulePath, stagePath);
-
-        // 데이터 준비 성공 여부 확인 후 씬 이동
         if (StageInjection.Instance.GetGameSpec() != null)
         {
             Main.Instance.MoveScene(Main.Scene.GameScene);

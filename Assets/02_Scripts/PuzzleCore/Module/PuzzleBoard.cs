@@ -45,6 +45,34 @@ namespace Puzzle.Core
             _frameCount = 0;
             _isProcessing = true;
             gameSpec = spec;
+
+            if (gameSpec != null && gameSpec.stageData != null)
+            {
+                Width = gameSpec.stageData.stage_width;
+                Height = gameSpec.stageData.stage_height;
+
+                if (gameSpec.stageData.cells != null)
+                {
+                    foreach (var cellData in gameSpec.stageData.cells)
+                    {
+                        GridPos pos = new GridPos(cellData.x, cellData.y);
+                        PuzzleCell cell = new PuzzleCell(pos);
+                        
+                        cell.CellType = (CellType)cellData.cell_type;
+
+                        if (!string.IsNullOrEmpty(cellData.block_id))
+                        {
+                            BlockData bData = gameSpec.GetBlock(cellData.block_id);
+                            if (bData != null)
+                            {
+                                cell.Block = new PuzzleBlock(bData);
+                            }
+                        }
+
+                        Cells[pos] = cell;
+                    }
+                }
+            }
         }
 
         /// <summary>

@@ -43,60 +43,12 @@ namespace Puzzle.Core
     }
 
     /// <summary>
-    /// 전체 게임의 설정 데이터(규칙, 스테이지, 블럭 등)를 담는 통합 사양 클래스입니다.
-    /// </summary>
-    [Serializable]
-    public class GameSpec
-    {
-        /// <summary> 스테이지 레이아웃 및 초기 배치 데이터 </summary>
-        public StageData stageData;
-        /// <summary> 게임 규칙 리스트 </summary>
-        public List<RuleData> rules;
-        /// <summary> 등장 가능한 블럭 정보 리스트 </summary>
-        public List<BlockData> blocks;
-
-        /// <summary> 특정 아이디에 해당하는 규칙을 찾습니다. </summary>
-        public RuleData GetRule(string ruleId) => rules?.Find(r => r.ruleId == ruleId) ?? default;
-        /// <summary> 특정 아이디에 해당하는 블럭 정보를 찾습니다. </summary>
-        public BlockData GetBlock(string blockId) => blocks?.Find(b => b.blockId == blockId);
-    }
-
-    /// <summary>
-    /// 스테이지 전체 구성을 담는 데이터 클래스입니다.
-    /// </summary>
-    [Serializable]
-    public class StageData
-    {
-        /// <summary> 스테이지 고유 고유 아이디 </summary>
-        public int stage_id;
-        /// <summary> 보드 가로 크기 </summary>
-        public int stage_width;
-        /// <summary> 보드 세로 크기 </summary>
-        public int stage_height;
-        /// <summary> 셀별 세부 데이터 리스트 </summary>
-        public List<CellData> cells;
-    }
-
-    /// <summary>
-    /// 개별 셀의 초기 설정값을 담는 데이터 클래스입니다.
-    /// </summary>
-    [Serializable]
-    public class CellData
-    {
-        public int x;
-        public int y;
-        public string block_id;
-        public int panel_id;
-        public int cell_type;
-    }
-
-    /// <summary>
     /// 규칙 JSON 파일을 파싱하기 위한 컨테이너 클래스입니다.
     /// </summary>
     [Serializable]
     public class GameRuleContainer
     {
-        public List<RuleData> rules;
+        public RuleData rule;
         public List<BlockData> blocks;
     }
 
