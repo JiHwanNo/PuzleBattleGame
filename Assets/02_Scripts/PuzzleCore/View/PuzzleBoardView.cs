@@ -124,40 +124,6 @@ public class PuzzleBoardView : MonoBehaviour
     }
 
     /// <summary>
-    /// 매 프레임마다 입력을 감지하여 보드 내의 어떤 블럭이 클릭되었는지 
-    /// 중앙(Board)에서 한 번만 연산(Raycast)하여 판별합니다.
-    /// 클릭 지점에 여러 콜라이더가 있을 수 있으므로 OverlapPointAll을 사용하여 모든 충돌체를 확인합니다.
-    /// </summary>
-    private void Update()
-    {
-        if (Input.GetMouseButtonDown(0))
-        {
-            Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-
-            // 마우스 클릭 위치에 있는 모든 2D 콜라이더를 감지 (Physics2D)
-            Collider2D[] hitColliders = Physics2D.OverlapPointAll(mousePosition);
-
-            if (hitColliders != null && hitColliders.Length > 0)
-            {
-                foreach (Collider2D hitCollider in hitColliders)
-                {
-                    // 충돌한 객체에 PuzzleBlockCollider 컴포넌트가 있다면 클릭 이벤트 실행
-                    if (hitCollider.TryGetComponent<PuzzleBlockCollider>(out var blockCollider))
-                    {
-                        blockCollider.OnClickBlock();
-                    }
-
-                    // 충돌한 객체에 PuzzleCellCollider 컴포넌트가 있다면 클릭 이벤트 실행
-                    if (hitCollider.TryGetComponent<PuzzleCellCollider>(out var cellCollider))
-                    {
-                        cellCollider.OnClickCell();
-                    }
-                }
-            }
-        }
-    }
-
-    /// <summary>
     /// 특정 블럭 뷰에서 입력(클릭/터치)이 발생했을 때 호출됩니다.
     /// </summary>
     /// <param name="pos">입력이 발생한 그리드 좌표</param>

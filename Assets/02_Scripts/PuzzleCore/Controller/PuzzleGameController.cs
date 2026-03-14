@@ -1,5 +1,6 @@
-using UnityEngine;
 using Puzzle.Core;
+using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class PuzzleGameController : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class PuzzleGameController : MonoBehaviour
 
     private PuzzleBoard _board; // 코어 로직 엔진 및 데이터
 
+    bool isInitialized = false;
     void Start()
     {
         GameSpec gameSpec = StageInjection.Instance.GetGameSpec();
@@ -30,6 +32,74 @@ public class PuzzleGameController : MonoBehaviour
         {
             Debug.LogError("BoardView가 설정되지 않았습니다!");
         }
+
+        isInitialized = true;
+    }
+
+
+
+
+    /// <summary>
+    /// 매 프레임마다 입력을 감지하여 보드 내의 어떤 블럭이 클릭되었는지 
+    /// 중앙(Board)에서 한 번만 연산(Raycast)하여 판별합니다.
+    /// 클릭 지점에 여러 콜라이더가 있을 수 있으므로 OverlapPointAll을 사용하여 모든 충돌체를 확인합니다.
+    /// </summary>
+    private void Update()
+    {
+        if (!isInitialized)
+            return;
+
+        if (TryGetPointerDownPosition(out Vector2 screenPosition))
+        {
+            Vector2 worldPosition = Camera.main.ScreenToWorldPoint(screenPosition);
+
+            // 마우스 클릭 위치에 있는 모든 2D 콜라이더를 감지 (Physics2D)
+            Collider2D[] hitColliders = Physics2D.OverlapPointAll(worldPosition);
+
+            if (hitColliders != null && hitColliders.Length > 0)
+            {
+                foreach (Collider2D hitCollider in hitColliders)
+                {
+                    // 충돌한 객체에 PuzzleBlockCollider 컴포넌트가 있다면 클릭 이벤트 실행
+                    if (hitCollider.TryGetComponent<PuzzleBlockCollider>(out var blockCollider))
+                    {
+                        blockCollider.OnClickBlock();
+                    }
+
+                    // 충돌한 객체에 PuzzleCellCollider 컴포넌트가 있다면 클릭 이벤트 실행
+                    if (hitCollider.TryGetComponent<PuzzleCellCollider>(out var cellCollider))
+                    {
+                        cellCollider.OnClickCell();
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 마우스 클릭 또는 터치 입력이 발생했는지 확인하고 해당 화면(Screen) 좌표를 반환합니다.
+    /// </summary>
+    /// <param name="position">입력이 발생한 화면 좌표</param>
+    /// <returns>입력이 발생했다면 true</returns>
+    private bool TryGetPointerDownPosition(out Vector2 position)
+    {
+        position = Vector2.zero;
+
+        // 마우스 입력 확인
+        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            position = Mouse.current.position.ReadValue();
+            return true;
+        }
+
+        // 터치 입력 확인
+        if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
+        {
+            position = Touchscreen.current.primaryTouch.position.ReadValue();
+            return true;
+        }
+
+        return false;
     }
 
 }
