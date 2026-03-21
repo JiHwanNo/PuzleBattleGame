@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using Puzzle.Core;
 
 /// <summary>
@@ -65,14 +66,25 @@ public class PuzzleBoardView : MonoBehaviour
             GridPos pos = kvp.Key;
             PuzzleCell cell = kvp.Value;
             
-            // 셀의 월드 좌표 계산 (cellRoot 기준 혹은 자체 transform 기준)
             Transform root = cellRoot != null ? cellRoot : transform;
             Vector3 worldPos = root.TransformPoint(new Vector3(pos.X * cellSize, pos.Y * cellSize, 0));
             
             string info = $"({pos.X},{pos.Y})";
-            if (cell.Block != null)
+
+            if (_blockViews.TryGetValue(pos, out PuzzleBlockView blockView))
             {
-                info += $"\nID: {cell.Block.GetBlockId()}";
+                info += $"\nID: {blockView.GetBlockData()?.GetBlockId() ?? "NullData"}";
+            }
+            else if (cell.Block != null)
+            {
+                if (_board.State == BoardState.Waiting)
+                {
+                    info += $"\nID: {cell.Block.GetBlockId()}\n[MISSING VIEW]";
+                }
+                else
+                {
+                    info += $"\nID: {cell.Block.GetBlockId()}\n[PROCESSING]";
+                }
             }
             else if (cell.CellType == CellType.Generator)
             {
@@ -90,10 +102,6 @@ public class PuzzleBoardView : MonoBehaviour
     }
 #endif
 
-    /// <summary>
-    /// 전달받은 보드 데이터를 바탕으로 화면에 퍼즐 판을 그립니다.
-    /// </summary>
-    /// <param name="boardData">화면에 표시할 보드 모델 객체</param>
     public void DrawBoard(IPuzzleBoard boardData)
     {
         _board = boardData;
@@ -103,20 +111,17 @@ public class PuzzleBoardView : MonoBehaviour
             return;
         }
 
-        // 에셋 매니저를 통해 프리팹 미리 확보 (캐싱됨)
         _cellPrefabObj = AssetManager.Instance.LoadAsset<GameObject>(cellAddress);
         _blockPrefabObj = AssetManager.Instance.LoadAsset<GameObject>(blockAddress);
 
         if (_cellPrefabObj == null || _blockPrefabObj == null)
         {
-            Debug.LogError($"[PuzzleBoardView] Failed to load prefabs from Addressables. Cell: {cellAddress}, Block: {blockAddress}");
+            Debug.LogError($"[PuzzleBoardView] Failed to load prefabs. Cell: {cellAddress}, Block: {blockAddress}");
             return;
         }
 
-        // 기존 뷰 초기화
         ClearBoard();
 
-        // 루트 노드가 지정 안 되어 있으면 자신을 사용
         if (cellRoot == null)
         {
             cellRoot = this.transform;
@@ -126,7 +131,6 @@ public class PuzzleBoardView : MonoBehaviour
             blockRoot = this.transform;
         }
 
-        // 보드의 모든 셀을 순회하며 셀 및 블럭이 있는 경우 뷰를 생성
         foreach (var kvp in _board.Cells)
         {
             GridPos gridPos = kvp.Key;
@@ -141,9 +145,6 @@ public class PuzzleBoardView : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 현재 보드에 표시된 모든 뷰를 제거하고 풀로 반납합니다.
-    /// </summary>
     private void ClearBoard()
     {
         foreach (var view in _cellViews.Values)
@@ -166,9 +167,6 @@ public class PuzzleBoardView : MonoBehaviour
         _blockViews.Clear();
     }
 
-    /// <summary>
-    /// 특정 좌표에 새로운 셀 뷰를 생성하고 배치합니다.
-    /// </summary>
     private void CreateCellView(GridPos gridPos, PuzzleCell cellData)
     {
         if (_cellPrefabObj == null)
@@ -177,8 +175,6 @@ public class PuzzleBoardView : MonoBehaviour
         }
 
         Vector3 localPos = new Vector3(gridPos.X * cellSize, gridPos.Y * cellSize, 0);
-
-        // 지정된 cellRoot 하위에 생성
         GameObject cellObj = PoolManager.Instance.Get(_cellPrefabObj, cellRoot);
         cellObj.transform.localPosition = localPos;
         cellObj.name = $"Cell_{gridPos.X}_{gridPos.Y}";
@@ -193,9 +189,6 @@ public class PuzzleBoardView : MonoBehaviour
         _cellViews.Add(gridPos, cellView);
     }
 
-    /// <summary>
-    /// 특정 좌표에 새로운 블럭 뷰를 생성하고 배치합니다.
-    /// </summary>
     private void CreateBlockView(GridPos gridPos, PuzzleBlock blockData)
     {
         if (_blockPrefabObj == null)
@@ -203,10 +196,8 @@ public class PuzzleBoardView : MonoBehaviour
             return;
         }
 
-        // 블럭은 배경보다 앞에 오도록 Z를 -0.1로 설정
-        Vector3 localPos = new Vector3(gridPos.X * cellSize, gridPos.Y * cellSize, -0.1f);
-
-        // 지정된 blockRoot 하위에 생성
+        // 레이어 정렬로 해결되므로 Z는 0으로 고정
+        Vector3 localPos = new Vector3(gridPos.X * cellSize, gridPos.Y * cellSize, 0);
         GameObject blockObj = PoolManager.Instance.Get(_blockPrefabObj, blockRoot);
         blockObj.transform.localPosition = localPos;
         blockObj.name = $"Block_{gridPos.X}_{gridPos.Y}";
@@ -219,9 +210,6 @@ public class PuzzleBoardView : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 매 프레임마다 보드 모델로부터 발생한 액션들을 가져와 화면에 반영합니다.
-    /// </summary>
     private void Update()
     {
         if (_board == null)
@@ -232,23 +220,53 @@ public class PuzzleBoardView : MonoBehaviour
         List<BoardViewAction> actions = _board.FetchActions();
         if (actions != null && actions.Count > 0)
         {
-            foreach (var action in actions)
+            var moveActions = actions.Where(a => a.type == ViewType.Move).ToList();
+            var otherActions = actions.Where(a => a.type != ViewType.Move).ToList();
+
+            if (moveActions.Count > 0)
+            {
+                HandleBatchMove(moveActions);
+            }
+
+            foreach (var action in otherActions)
             {
                 ProcessViewAction(action);
             }
         }
     }
 
-    /// <summary>
-    /// 개별 보드 액션 타입에 따라 시각적 연출을 수행합니다.
-    /// </summary>
+    private void HandleBatchMove(List<BoardViewAction> moveActions)
+    {
+        Dictionary<GridPos, PuzzleBlockView> tempMovingViews = new Dictionary<GridPos, PuzzleBlockView>();
+        
+        foreach (var action in moveActions)
+        {
+            if (_blockViews.TryGetValue(action.position, out PuzzleBlockView view))
+            {
+                tempMovingViews[action.position] = view;
+                _blockViews.Remove(action.position);
+            }
+        }
+
+        foreach (var action in moveActions)
+        {
+            if (tempMovingViews.TryGetValue(action.position, out PuzzleBlockView view))
+            {
+                GridPos to = action.targetPosition;
+                _blockViews[to] = view;
+
+                // Z좌표 0 유지
+                Vector3 targetLocalPos = new Vector3(to.X * cellSize, to.Y * cellSize, 0);
+                view.transform.localPosition = targetLocalPos;
+                view.Initialize(view.GetBlockData(), to, this);
+            }
+        }
+    }
+
     private void ProcessViewAction(BoardViewAction action)
     {
         switch (action.type)
         {
-            case ViewType.Move:
-                HandleMoveAction(action.position, action.targetPosition);
-                break;
             case ViewType.Destroy:
                 HandleDestroyAction(action.position);
                 break;
@@ -258,25 +276,6 @@ public class PuzzleBoardView : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 블럭의 이동 연출을 처리합니다.
-    /// </summary>
-    private void HandleMoveAction(GridPos from, GridPos to)
-    {
-        if (_blockViews.TryGetValue(from, out PuzzleBlockView view))
-        {
-            _blockViews.Remove(from);
-            _blockViews[to] = view;
-
-            Vector3 targetLocalPos = new Vector3(to.X * cellSize, to.Y * cellSize, -0.1f);
-            view.transform.localPosition = targetLocalPos;
-            view.Initialize(view.GetBlockData(), to, this); 
-        }
-    }
-
-    /// <summary>
-    /// 블럭의 파괴 연출을 처리합니다.
-    /// </summary>
     private void HandleDestroyAction(GridPos pos)
     {
         if (_blockViews.TryGetValue(pos, out PuzzleBlockView view))
@@ -289,9 +288,6 @@ public class PuzzleBoardView : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 새로운 블럭의 생성 연출을 처리합니다.
-    /// </summary>
     private void HandleCreateAction(GridPos pos)
     {
         PuzzleCell cell = _board.GetCell(pos);
@@ -305,9 +301,6 @@ public class PuzzleBoardView : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 특정 블럭 뷰에서 입력(클릭/터치)이 발생했을 때 호출됩니다.
-    /// </summary>
     public void OnBlockInput(GridPos pos)
     {
         if (_board != null)
@@ -316,9 +309,6 @@ public class PuzzleBoardView : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 현재 보드 상태에 맞춰 모든 블럭 뷰를 재생성합니다.
-    /// </summary>
     public void RefreshBlocks()
     {
         if (_board == null)
