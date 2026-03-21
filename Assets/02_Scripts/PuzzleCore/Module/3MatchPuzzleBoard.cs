@@ -15,6 +15,9 @@ namespace Puzzle.Core
         /// <summary> 게임 내 공용 난수 생성기 </summary>
         public PuzzleRandom Random { get; private set; }
 
+        /// <summary> 스테이지 목표 관리자 </summary>
+        public ObjectiveManager Objective { get; private set; }
+
         /// <summary> 좌표별 셀 데이터를 저장하는 딕셔너리 </summary>
         public Dictionary<GridPos, PuzzleCell> Cells { get; private set; }
         
@@ -56,8 +59,11 @@ namespace Puzzle.Core
             gameSpec = spec;
             State = BoardState.Waiting;
 
-            // 난수 생성기 초기화 (임시 시드 0 사용, 추후 GameSpec 등에서 주입 가능)
+            // 난수 생성기 초기화
             Random = new PuzzleRandom(0);
+
+            // 목표 관리자 초기화
+            Objective = new ObjectiveManager(gameSpec?.rule.objectives);
 
             if (gameSpec != null && gameSpec.stageData != null)
             {
@@ -136,7 +142,12 @@ namespace Puzzle.Core
             switch (State)
             {
                 case BoardState.Waiting:
-                    // 입력 대기 중 (별도 로직 없음)
+                    // 클리어 조건 실시간 체크
+                    if (Objective != null && Objective.IsAllObjectivesCleared())
+                    {
+                        State = BoardState.Finish;
+                        UnityEngine.Debug.Log("[ThreeMatchBoard] 모든 목표 달성! 게임 종료 상태로 전환");
+                    }
                     break;
 
                 case BoardState.Matching:
@@ -166,6 +177,9 @@ namespace Puzzle.Core
                         // 모든 빈 공간이 보충되었다면 다시 매칭 판정 (콤보 체크)
                         State = BoardState.Matching;
                     }
+                    break;
+                case BoardState.Finish:
+                    // 종료 연출 등 처리 가능
                     break;
             }
         }

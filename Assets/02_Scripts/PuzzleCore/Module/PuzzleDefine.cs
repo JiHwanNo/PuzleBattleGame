@@ -64,6 +64,32 @@ namespace Puzzle.Core
         public PuzzleType puzzleType;
         /// <summary> 보드 타일 모양 </summary>
         public BoardShape boardShape;
+        /// <summary> 스테이지 클리어 목표 목록 </summary>
+        public List<ObjectiveData> objectives;
+    }
+
+    /// <summary>
+    /// 스테이지 클리어를 위해 달성해야 하는 개별 목표 데이터입니다.
+    /// </summary>
+    [Serializable]
+    public struct ObjectiveData
+    {
+        /// <summary> 목표 종류 (점수, 블럭 수집 등) </summary>
+        public ObjectiveType type;
+        /// <summary> 목표 대상 (특정 블럭 ID 등, 필요 시 사용) </summary>
+        public string targetId;
+        /// <summary> 달성해야 하는 목표 수치 </summary>
+        public int count;
+    }
+
+    /// <summary>
+    /// 게임 클리어 목표의 종류를 정의합니다.
+    /// </summary>
+    public enum ObjectiveType
+    {
+        Score = 0,                  // 특정 점수 도달
+        CollectBlock = 1,           // 특정 ID의 블럭 수집(파괴)
+        ClearCell = 2,              // 특정 셀(바닥 등) 모두 제거
     }
 
     /// <summary>
