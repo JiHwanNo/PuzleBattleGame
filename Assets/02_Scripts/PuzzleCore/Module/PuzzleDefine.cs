@@ -211,4 +211,22 @@ namespace Puzzle.Core
         Move,    // 이동
         Land,    // 착지
     }
+
+    /// <summary>
+    /// 리플레이를 위해 특정 프레임에 발생한 유저의 조작 정보를 기록하는 구조체입니다.
+    /// </summary>
+    [Serializable]
+    public struct InputRecord
+    {
+        /// <summary> 조작이 발생한 게임 로직 프레임 </summary>
+        public ulong frame;
+        /// <summary> 클릭/터치된 그리드 좌표 </summary>
+        public GridPos position;
+
+        public InputRecord(ulong frame, GridPos pos)
+        {
+            this.frame = frame;
+            this.position = pos;
+        }
+    }
 }

@@ -33,6 +33,9 @@ namespace Puzzle.Core
         /// <summary> 뷰(View)에 전달할 보드 상태 변화 기록 리스트 </summary>
         private List<BoardViewAction> _views;
 
+        /// <summary> 리플레이를 위해 기록된 유저의 조작 내역 </summary>
+        private List<InputRecord> _recordedInputs = new List<InputRecord>();
+
         /// <summary> 게임 시작 후 누적된 프레임 수 </summary>
         private ulong _frameCount;
 
@@ -110,6 +113,9 @@ namespace Puzzle.Core
             if (State == BoardState.Waiting)
             {
                 _inputQueue.Enqueue(input);
+                
+                // 리플레이를 위한 조작 정보 기록
+                _recordedInputs.Add(new InputRecord(_frameCount, input));
             }
         }
 
@@ -129,6 +135,14 @@ namespace Puzzle.Core
                 processed = true;
             }
             return processed;
+        }
+
+        /// <summary>
+        /// 지금까지 기록된 유저의 모든 조작 내역을 반환합니다.
+        /// </summary>
+        public List<InputRecord> GetRecordedInputs()
+        {
+            return new List<InputRecord>(_recordedInputs);
         }
 
         /// <summary>
