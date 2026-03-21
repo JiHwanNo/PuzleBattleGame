@@ -3,53 +3,40 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-/// <summary>
-/// 유저의 입력을 감지하고 퍼즐 보드 모델 및 뷰와 통신하여 전체 게임 루프를 제어하는 컨트롤러 클래스입니다.
-/// </summary>
 public class PuzzleGameController : MonoBehaviour
 {
     [Header("View References")]
-    /// <summary> 화면에 보드를 그리는 뷰 객체 </summary>
-    public PuzzleBoardView boardView;
+    public PuzzleBoardView boardView; // 화면의 그래픽 View 스크립트 참조
 
-    /// <summary> 퍼즐 보드의 핵심 로직을 처리하는 모델 인터페이스 </summary>
-    private IPuzzleBoard _board;
+    private IPuzzleBoard _board; // 코어 로직 엔진 및 데이터
 
-    /// <summary> 현재 드래그 중인 블럭들의 좌표 경로 </summary>
+    /// <summary> 현재 드래그 세션에서 이미 거쳐간 좌표 목록 (중복 입력 방지용) </summary>
     private HashSet<GridPos> _inputPath = new HashSet<GridPos>();
 
-    /// <summary> 입력 종료(포인터 뗌)가 발생했음을 알리는 플래그 </summary>
-    private bool _isReleasedPending = false;
-
-    /// <summary> 보드가 정상적으로 초기화되었는지 여부 </summary>
-    private bool _isInitialized = false;
-
-    /// <summary>
-    /// 게임 시작 시 스테이지 데이터를 로드하고 보드를 초기화합니다.
-    /// </summary>
-    private void Start()
+    bool isInitialized = false;
+    void Start()
     {
         GameSpec gameSpec = StageInjection.Instance.GetGameSpec();
+
         if (gameSpec == null || gameSpec.stageData == null)
         {
+            Debug.LogWarning("GameSpec이 주입되지 않았거나 비어 있습니다! 테스트용 더미 데이터로 초기화합니다.");
             gameSpec = gameSpec ?? new GameSpec();
         }
 
+        // 게임 타입에 따라 적절한 보드 구현체 생성
         switch (gameSpec.rule.puzzleType)
         {
             case PuzzleType.ThreeMatch:
                 _board = new ThreeMatchPuzzleBoard();
                 break;
+            case PuzzleType.Link:
+                _board = new ThreeMatchPuzzleBoard(); // 임시
+                break;
             default:
                 _board = new ThreeMatchPuzzleBoard();
                 break;
         }
-
-        // 보드 로그를 유니티 콘솔에 연결 (Model-View 분리 준수)
-        _board.OnLog = (msg) =>
-        {
-            Debug.Log($"<color=cyan>[Model]</color> {msg}");
-        };
 
         _board.Initialize(gameSpec);
 
@@ -58,18 +45,16 @@ public class PuzzleGameController : MonoBehaviour
             boardView.DrawBoard(_board);
         }
 
-        _isInitialized = true;
+        isInitialized = true;
     }
 
     /// <summary>
-    /// 매 프레임 입력 신호를 감지합니다. (Rendering Frame)
+    /// 매 프레임마다 입력을 감지합니다.
     /// </summary>
     private void Update()
     {
-        if (!_isInitialized || _board == null)
-        {
+        if (!isInitialized || _board == null)
             return;
-        }
 
         // 1. 마우스/터치를 누르고 있는 중인가?
         if (IsPointerHeld())
@@ -77,106 +62,93 @@ public class PuzzleGameController : MonoBehaviour
             Vector2 screenPosition = GetPointerPosition();
             Vector2 worldPosition = Camera.main.ScreenToWorldPoint(screenPosition);
 
+            // 현재 위치 아래의 콜라이더 감지
             Collider2D hitCollider = Physics2D.OverlapPoint(worldPosition);
-            if (hitCollider != null && hitCollider.TryGetComponent<PuzzleBlockCollider>(out var blockCollider))
+            if (hitCollider != null)
             {
-                GridPos? pos = GetGridPosFromCollider(hitCollider);
-                if (pos.HasValue && !_inputPath.Contains(pos.Value))
+                if (hitCollider.TryGetComponent<PuzzleBlockCollider>(out var blockCollider))
                 {
-                    _inputPath.Add(pos.Value);
-                    blockCollider.OnClickBlock(); // 보드 큐에 좌표 입력
+                    // 해당 블럭 뷰로부터 좌표 정보를 가져옴
+                    PuzzleBlockView blockView = blockCollider.GetComponentInParent<PuzzleBlockView>();
+                    if (blockView != null)
+                    {
+                        // 뷰 내부의 비공개 필드인 _gridPos를 가져올 수 없으므로, 
+                        // 이미 만들어진 OnClicked() 대신 뷰를 통해 좌표를 확인하는 로직이 필요할 수 있으나
+                        // 일단 기존 OnClicked() 흐름을 유지하되, 뷰의 데이터(GridPos)를 체크하는 구조로 우회합니다.
+                        // (참고: PuzzleBlockView에 public으로 좌표를 노출하거나, 직접 BoardView에서 좌표를 계산할 수도 있습니다.)
+                        
+                        // 현재는 편의상 OnClicked 내부에서 보드에 Input을 넣는 과정을 
+                        // 이 컨트롤러에서 중복 체크 후 실행하도록 합니다.
+                        // (※ PuzzleBlockView.OnClicked() 내부 로그가 중복 방지 되는지 확인용)
+                        
+                        // TODO: 더 깔끔한 구조를 위해 View에서 좌표를 받아오는 메서드 추가 권장
+                    }
+                    
+                    // 우선은 기존 UI 조작 체계를 유지하며 중복 실행만 방지 (Collider 단위 중복 체크)
+                    // (※ 여기서 Collider 자체를 체크하는 방식으로 중복을 막습니다.)
+                    GridPos? pos = GetGridPosFromCollider(hitCollider);
+                    if (pos.HasValue && !_inputPath.Contains(pos.Value))
+                    {
+                        _inputPath.Add(pos.Value);
+                        blockCollider.OnClickBlock();
+                    }
                 }
             }
         }
 
-        // 2. 마우스/터치를 뗐는가? -> FixedUpdate에서 처리하도록 예약
+        // 2. 마우스/터치를 뗐는가? -> 입력 종료 및 경로 초기화
         if (IsPointerReleased())
         {
-            _isReleasedPending = true;
-        }
-    }
-
-    /// <summary>
-    /// 고정 프레임 주기로 보드 로직을 업데이트합니다. (Logic Frame)
-    /// 리플레이의 결정론적 보장을 위해 사용됩니다.
-    /// </summary>
-    private void FixedUpdate()
-    {
-        if (!_isInitialized || _board == null)
-        {
-            return;
-        }
-
-        // 예약된 입력 종료 처리
-        if (_isReleasedPending)
-        {
             _board.InputEnd();
-            _inputPath.Clear();
-            _isReleasedPending = false;
+            _inputPath.Clear(); // 거쳐간 경로 초기화
         }
 
-        // 보드 상태 및 프레임 업데이트
+        // 3. 보드 논리 업데이트
         _board.Update();
     }
 
     /// <summary>
-    /// 충돌체(Collider)로부터 해당 셀의 그리드 좌표를 계산합니다.
+    /// 충돌한 콜라이더로부터 그리드 좌표를 역산하거나 가져옵니다.
     /// </summary>
     private GridPos? GetGridPosFromCollider(Collider2D col)
     {
+        // View 컴포넌트에 접근하여 좌표를 가져오는 것이 가장 정확함
         var view = col.GetComponentInParent<PuzzleBlockView>();
-        if (view != null && boardView != null)
+        if (view != null)
         {
-            float cs = boardView.cellSize;
-            Vector3 lp = view.transform.localPosition;
-            return new GridPos(Mathf.RoundToInt(lp.x / cs), Mathf.RoundToInt(lp.y / cs));
+            // 현재 PuzzleBlockView.cs에 좌표를 반환하는 public 필드가 없으므로 
+            // 리플렉션을 쓰거나 필드를 추가해야 함. (일단은 좌표 계산 로직으로 대체)
+            // 혹은 View에 public GridPos 속성을 추가하는 것이 정석입니다.
+            
+            // 임시: 월드 좌표 기반 역산 (cellSize 사용)
+            if (boardView != null)
+            {
+                float cs = boardView.cellSize;
+                Vector3 lp = view.transform.localPosition;
+                return new GridPos(Mathf.RoundToInt(lp.x / cs), Mathf.RoundToInt(lp.y / cs));
+            }
         }
         return null;
     }
 
-    /// <summary>
-    /// 현재 화면 클릭 또는 터치가 유지되고 있는지 확인합니다.
-    /// </summary>
     private bool IsPointerHeld()
     {
-        if (Mouse.current != null && Mouse.current.leftButton.isPressed)
-        {
-            return true;
-        }
-
-        if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed)
-        {
-            return true;
-        }
+        if (Mouse.current != null && Mouse.current.leftButton.isPressed) return true;
+        if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed) return true;
         return false;
     }
 
-    /// <summary>
-    /// 현재 화면 클릭 또는 터치가 종료되었는지 확인합니다.
-    /// </summary>
     private bool IsPointerReleased()
     {
-        if (Mouse.current != null && Mouse.current.leftButton.wasReleasedThisFrame)
-        {
-            return true;
-        }
-
-        if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasReleasedThisFrame)
-        {
-            return true;
-        }
+        if (Mouse.current != null && Mouse.current.leftButton.wasReleasedThisFrame) return true;
+        if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasReleasedThisFrame) return true;
         return false;
     }
 
-    /// <summary>
-    /// 현재 포인터의 스크린 좌표를 가져옵니다.
-    /// </summary>
     private Vector2 GetPointerPosition()
     {
         if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed)
-        {
             return Touchscreen.current.primaryTouch.position.ReadValue();
-        }
         return Mouse.current.position.ReadValue();
     }
 }

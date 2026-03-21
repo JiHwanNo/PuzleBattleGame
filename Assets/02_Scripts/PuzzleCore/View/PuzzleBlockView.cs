@@ -6,29 +6,19 @@ using UnityEngine;
 /// </summary>
 public class PuzzleBlockView : MonoBehaviour    
 {
-    /// <summary> 블럭 이미지를 렌더링할 컴포넌트 </summary>
+    /// <summary> 블럭 이미지 </summary>
     [SerializeField]
     private SpriteRenderer _spriteRenderer;
-
-    /// <summary> 블럭의 물리적 충돌 및 입력을 담당하는 컴포넌트 </summary>
     [SerializeField]
     private PuzzleBlockCollider _boxCollider;
 
     /// <summary> 외부(Collider 등)에서 스프라이트 정보를 얻기 위한 프로퍼티 </summary>
-    public SpriteRenderer SpriteRenderer
-    {
-        get
-        {
-            return _spriteRenderer;
-        }
-    }
+    public SpriteRenderer SpriteRenderer => _spriteRenderer;
 
     /// <summary> 이 뷰와 연결된 블럭 모델 데이터 </summary>
     private PuzzleBlock _blockData;
-
     /// <summary> 이 블럭이 위치한 보드상의 그리드 좌표 </summary>
     private GridPos _gridPos;
-
     /// <summary> 이 블럭을 관리하는 보드 뷰 참조 </summary>
     private PuzzleBoardView _boardView;
 
@@ -51,30 +41,22 @@ public class PuzzleBlockView : MonoBehaviour
     /// </summary>
     public void UpdateVisual()
     {
-        if (_blockData == null)
-        {
-            return;
-        }
+        if (_blockData == null) return;
 
         if (_spriteRenderer != null)
         {
             string blockId = _blockData.GetBlockId();
-            string address = $"Block_{blockId}";
 
-            // 레이어 순서 강제 조정 (배경보다 앞에 나오도록)
-            _spriteRenderer.sortingOrder = 10;
+            string address = $"Block_{blockId}";
 
             AssetManager.AssetArguments<Sprite> args = new AssetManager.AssetArguments<Sprite>
             {
                 address = address,
                 successCallback = (sprite) =>
                 {
-                    if (this == null || _spriteRenderer == null)
-                    {
-                        return;
-                    }
+                    // 비동기 로드 도중 블럭이 파괴되었을 수 있으므로 null 체크 필수
+                    if (this == null || _spriteRenderer == null) return;
 
-                    Debug.Log($"[PuzzleBlockView] 스프라이트 로드 성공: {address}");
                     _spriteRenderer.sprite = sprite;
 
                     if (_boxCollider != null)
@@ -84,11 +66,8 @@ public class PuzzleBlockView : MonoBehaviour
                 },
                 failedCallback = () =>
                 {
-                    if (this == null)
-                    {
-                        return;
-                    }
-                    Debug.LogError($"[PuzzleBlockView] 스프라이트 로드 실패! 주소: '{address}'. Addressables에 해당 이름의 Sprite가 있는지 확인하세요.");
+                    if (this == null) return;
+                    Debug.LogWarning($"[PuzzleBlockView] 스프라이트 로드 실패! 주소: {address}");
                 }
             };
 
@@ -99,11 +78,7 @@ public class PuzzleBlockView : MonoBehaviour
     /// <summary>
     /// 이 뷰가 참조하고 있는 블럭 모델 데이터를 반환합니다.
     /// </summary>
-    /// <returns>연결된 블럭 모델</returns>
-    public PuzzleBlock GetBlockData()
-    {
-        return _blockData;
-    }
+    public PuzzleBlock GetBlockData() => _blockData;
 
     /// <summary>
     /// 보드 뷰(Raycast) 등에 의해 이 블럭이 클릭되었다고 판정되었을 때 호출됩니다.

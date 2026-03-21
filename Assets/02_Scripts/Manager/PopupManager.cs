@@ -1,77 +1,41 @@
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 게임 내 팝업 윈도우의 생성과 관리를 담당하는 매니저 클래스입니다.
+/// 게임 내 팝업 시스템을 관리하는 매니저 클래스입니다.
 /// </summary>
 public class PopupManager : MonoBehaviour
 {
-    #region Singleton
+    /// <summary> 싱글톤 인스턴스 </summary>
     private static PopupManager _instance;
+    
+    /// <summary> 팝업 전용 씬 이름 </summary>
+    public const string PopupSceneName = "PopupScene";
 
-    /// <summary> 전역 접근을 위한 싱글톤 인스턴스 </summary>
+    /// <summary>
+    /// PopupManager의 싱글톤 인스턴스를 반환합니다.
+    /// 씬에 없을 경우 자동으로 생성하거나 로드합니다.
+    /// </summary>
     public static PopupManager Instance
     {
         get
         {
             if (_instance == null)
             {
-                GameObject obj = new GameObject("PopupManager");
-                _instance = obj.AddComponent<PopupManager>();
-                DontDestroyOnLoad(obj);
-            }
-            return _instance;
-        }
-    }
-    #endregion
+                var scene = SceneManager.GetSceneByName(PopupSceneName);
+                if (!scene.isLoaded)
+                    SceneManager.LoadScene(PopupSceneName, LoadSceneMode.Additive);
 
-    /// <summary> 현재 화면에 띄워진 팝업들의 스택 </summary>
-    private Stack<GameObject> _popupStack = new Stack<GameObject>();
+                _instance = FindFirstObjectByType<PopupManager>();
 
-    /// <summary>
-    /// 지정된 프리팹 주소를 사용하여 팝업을 화면에 띄웁니다.
-    /// </summary>
-    /// <param name="address">팝업 프리팹의 Addressables 주소</param>
-    public void Show(string address)
-    {
-        AssetManager.AssetArguments<GameObject> args = new AssetManager.AssetArguments<GameObject>
-        {
-            address = address,
-            successCallback = (popup) =>
-            {
-                if (popup != null)
+                if (_instance == null)
                 {
-                    _popupStack.Push(popup);
+                    var go = new GameObject("PopupManager");
+                    _instance = go.AddComponent<PopupManager>();
+                    DontDestroyOnLoad(go);
                 }
             }
-        };
-
-        AssetManager.Instance.LoadGameObjectAsync(args, this.transform);
-    }
-
-    /// <summary>
-    /// 가장 최근에 띄워진 팝업을 닫습니다.
-    /// </summary>
-    public void Close()
-    {
-        if (_popupStack.Count > 0)
-        {
-            GameObject popup = _popupStack.Pop();
-            if (popup != null)
-            {
-                Destroy(popup);
-            }
-        }
-    }
-
-    /// <summary>
-    /// 화면에 열려 있는 모든 팝업을 닫습니다.
-    /// </summary>
-    public void CloseAll()
-    {
-        while (_popupStack.Count > 0)
-        {
-            Close();
+            return _instance;
         }
     }
 }

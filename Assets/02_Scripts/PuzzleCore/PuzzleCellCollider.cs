@@ -1,31 +1,46 @@
 using UnityEngine;
 
 /// <summary>
-/// 유니티의 물리 충돌 및 마우스 이벤트를 감지하여 PuzzleCellView에 전달하는 컴포넌트입니다.
+/// 유니티 내장 물리/이벤트(마우스 클릭 등)를 감지하여
+/// 셀 뷰(PuzzleCellView)로 전달하는 역할을 합니다.
 /// </summary>
-[RequireComponent(typeof(BoxCollider2D))]
 public class PuzzleCellCollider : MonoBehaviour
 {
-    /// <summary> 이 콜라이더가 속한 셀 뷰 </summary>
     [SerializeField]
-    private PuzzleCellView _cellView;
+    PuzzleCellView _cell;
+    [SerializeField]
+    BoxCollider2D _boxCollider2D;
 
     /// <summary>
-    /// 컴포넌트 초기화 및 셀 뷰 참조를 확보합니다.
+    /// 마우스 또는 터치로 BoxCollider2D 영역이 클릭되었을 때 유니티에서 자동 호출됩니다.
     /// </summary>
-    private void Awake()
+    private void OnMouseDown()
     {
-        if (_cellView == null)
+        OnClickCell();
+    }
+
+    /// <summary>
+    /// 뷰 쪽에 클릭 이벤트를 전달합니다.
+    /// </summary>
+    internal void OnClickCell()
+    {
+        if (_cell != null)
         {
-            _cellView = GetComponentInParent<PuzzleCellView>();
+            _cell.OnClicked();
         }
     }
 
     /// <summary>
-    /// 셀(타일)이 클릭되었을 때 호출됩니다.
+    /// 연결된 뷰(PuzzleCellView)의 스프라이트 크기를 확인하여 BoxCollider2D 크기를 조절합니다.
     /// </summary>
-    public void OnClickCell()
+    public void AdjustColliderSize()
     {
-        // TODO: 블럭이 없는 바닥 클릭 시 필요한 로직 구현
+        if (_cell != null && _cell.SpriteRenderer != null && _cell.SpriteRenderer.sprite != null)
+        {
+            if (_boxCollider2D != null)
+            {
+                _boxCollider2D.size = _cell.SpriteRenderer.sprite.bounds.size;
+            }
+        }
     }
 }

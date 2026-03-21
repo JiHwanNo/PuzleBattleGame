@@ -1,22 +1,59 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 게임의 진입점(Entry Point) 역할을 수행하는 클래스입니다.
-/// 초기 씬에서 매니저들을 생성하고 초기화하는 역할을 담당합니다.
+/// 게임의 전체적인 흐름과 씬 전환을 관리하는 메인 시스템 클래스입니다.
 /// </summary>
-public class Main : MonoBehaviour
+public class Main
 {
-    /// <summary>
-    /// 게임 시작 시 매니저 인스턴스들을 생성합니다.
-    /// </summary>
-    private void Awake()
+    #region Singleton
+    private static Main _instance;
+    public static Main Instance
     {
-        // 싱글톤 매니저들 강제 생성 및 유지
-        var am = AssetManager.Instance;
-        var pm = PoolManager.Instance;
-        var pop = PopupManager.Instance;
-        var si = StageInjection.Instance;
+        get
+        {
+            if (_instance == null)
+                _instance = new Main();
+            return _instance;
+        }
+    }
+    #endregion
 
-        Debug.Log("[Main] 시스템 매니저 초기화 완료.");
+    /// <summary> 현재 활성화된 씬 정보 </summary>
+    private Scene _curScene = Scene.None;
+    
+    /// <summary>
+    /// 메인 시스템을 초기화하고 시작 씬을 설정합니다.
+    /// </summary>
+    /// <param name="startScene">초기화 시 설정할 시작 씬</param>
+    internal void Init(Scene startScene)
+    {
+        _curScene = startScene;
+    }
+
+    /// <summary>
+    /// 지정된 씬으로 이동하며, 이전 씬은 언로드합니다.
+    /// </summary>
+    /// <param name="loadScene">로드할 대상 씬</param>
+    internal void MoveScene(Scene loadScene)
+    {
+        Scene preScene = _curScene;
+        if(preScene != Scene.None)
+            SceneManager.UnloadSceneAsync(preScene.ToString());
+
+        SceneManager.LoadSceneAsync(loadScene.ToString(), LoadSceneMode.Additive);
+        _curScene = loadScene;
+    }
+
+    /// <summary>
+    /// 게임 내에서 사용하는 씬의 종류를 정의합니다.
+    /// </summary>
+    public enum Scene
+    {
+        None,
+        TitleScene,
+        LoadingScene,
+        LobbyScene,
+        GameScene,
     }
 }
