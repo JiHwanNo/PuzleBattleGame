@@ -72,5 +72,8 @@ namespace Puzzle.Core
         
         /// <summary> 셀 자체의 특성이나 속성 (예: 빈 칸, 장애물 칸 등) </summary>
         public int cell_type;
+
+        /// <summary> 생성기(Generator)일 경우 생성될 블럭들의 아이디 목록 </summary>
+        public List<string> generator_block_ids;
     }
 }

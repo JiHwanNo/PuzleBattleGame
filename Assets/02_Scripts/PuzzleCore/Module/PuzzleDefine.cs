@@ -133,6 +133,7 @@ namespace Puzzle.Core
         Close = 0,                  // 막힌 구역
         Normal = 1,                 // 일반 바닥
         Lock = 2,                   // 로직상 잠긴 상태
+        Generator = 3,              // 블럭 생성기 (매 턴/필요 시 블럭 생성)
     }
 
     /// <summary> 

@@ -21,6 +21,9 @@ namespace Puzzle.Core
         /// <summary> 연출이나 특정 로직으로 인해 셀이 잠겼는지 여부 </summary>
         public bool isLocked;
 
+        /// <summary> 이 셀이 생성기(Generator)일 경우, 생성 가능한 블럭 ID 리스트 </summary>
+        public System.Collections.Generic.List<string> generatorBlockIds = new System.Collections.Generic.List<string>();
+
         /// <summary>
         /// 새로운 셀을 지정된 위치에 생성합니다.
         /// </summary>
@@ -31,6 +34,30 @@ namespace Puzzle.Core
             CellType = CellType.Normal; 
             Block = null;
             Panel = null;
+        }
+
+        /// <summary>
+        /// 생성기 셀인 경우, 설정된 목록 중 하나를 랜덤하게 골라 블럭을 생성합니다.
+        /// </summary>
+        /// <param name="spec">게임 사양서 (블럭 데이터 참조용)</param>
+        /// <param name="random">공용 난수 객체</param>
+        /// <returns>생성된 블럭 객체</returns>
+        public PuzzleBlock GenerateBlock(GameSpec spec, PuzzleRandom random)
+        {
+            if (CellType != CellType.Generator || generatorBlockIds.Count == 0)
+                return null;
+
+            // 리스트 중 랜덤하게 하나 선택
+            int index = random.Next(0, generatorBlockIds.Count);
+            string blockId = generatorBlockIds[index];
+
+            BlockData bData = spec.GetBlock(blockId);
+            if (bData != null)
+            {
+                return PuzzleBlockFactory.Create(bData);
+            }
+
+            return null;
         }
 
         /// <summary>

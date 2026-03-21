@@ -19,6 +19,9 @@ namespace Puzzle.Core
     /// </summary>
     public interface IPuzzleBoard
     {
+        /// <summary> 게임 내 공용 난수 생성기 </summary>
+        PuzzleRandom Random { get; }
+
         /// <summary> 좌표별 셀 데이터를 저장하는 딕셔너리 </summary>
         Dictionary<GridPos, PuzzleCell> Cells { get; }
 

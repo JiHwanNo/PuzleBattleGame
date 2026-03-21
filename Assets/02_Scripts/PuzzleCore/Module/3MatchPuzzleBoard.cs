@@ -9,6 +9,9 @@ namespace Puzzle.Core
     /// </summary>
     public class ThreeMatchPuzzleBoard : IPuzzleBoard
     {
+        /// <summary> 게임 내 공용 난수 생성기 </summary>
+        public PuzzleRandom Random { get; private set; }
+
         /// <summary> 좌표별 셀 데이터를 저장하는 딕셔너리 </summary>
         public Dictionary<GridPos, PuzzleCell> Cells { get; private set; }
         
@@ -50,6 +53,9 @@ namespace Puzzle.Core
             _selectedPos = null;
             gameSpec = spec;
 
+            // 난수 생성기 초기화 (임시 시드 0 사용, 추후 GameSpec 등에서 주입 가능)
+            Random = new PuzzleRandom(0);
+
             if (gameSpec != null && gameSpec.stageData != null)
             {
                 Width = gameSpec.stageData.stage_width;
@@ -63,6 +69,12 @@ namespace Puzzle.Core
                         PuzzleCell cell = new PuzzleCell(pos);
                         
                         cell.CellType = (CellType)cellData.cell_type;
+
+                        // 생성기 설정 로드
+                        if (cell.CellType == CellType.Generator && cellData.generator_block_ids != null)
+                        {
+                            cell.generatorBlockIds.AddRange(cellData.generator_block_ids);
+                        }
 
                         if (!string.IsNullOrEmpty(cellData.block_id))
                         {
@@ -110,6 +122,31 @@ namespace Puzzle.Core
         public void Update()
         {
             _frameCount++;
+
+            // 매 프레임마다 생성기(Generator) 체크 및 블럭 보충
+            ProcessGenerators();
+        }
+
+        /// <summary>
+        /// 생성기(Generator) 타입의 셀들을 검사하여, 블럭이 비어있다면 새 블럭을 생성합니다.
+        /// </summary>
+        private void ProcessGenerators()
+        {
+            foreach (var cell in Cells.Values)
+            {
+                if (cell.CellType == CellType.Generator && cell.Block == null)
+                {
+                    PuzzleBlock newBlock = cell.GenerateBlock(gameSpec, Random);
+                    if (newBlock != null)
+                    {
+                        cell.Block = newBlock;
+                        UnityEngine.Debug.Log($"[ThreeMatchBoard] 생성기에서 블럭 생성됨: {cell.Position}, ID: {newBlock.GetBlockId()}");
+                        
+                        // 시각적 연출 추가
+                        AddView(new BoardViewAction { type = ViewType.Create, frame = (uint)_frameCount });
+                    }
+                }
+            }
         }
 
         /// <summary>
