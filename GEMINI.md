@@ -28,3 +28,19 @@
 - **자동 커밋 금지**: Gemini CLI는 어떠한 경우에도 사용자의 명시적인 요청 없이 스스로 커밋(`git commit`)을 수행하지 않습니다. 모든 변경사항은 사용자가 검토한 후 직접 커밋하거나, 커밋 요청이 있을 때만 수행합니다.
 - **확장성**: 새로운 퍼즐 규칙(예: 육각형 매치)이 추가될 수 있음을 고려하여 인터페이스나 데이터 구조를 설계합니다.
 - **안정성**: 씬 이동이나 데이터 로드 실패 시 에러 로그를 명확히 남겨 디버깅이 용이하도록 합니다.
+
+## 🚀 6. 현재까지의 개발 진행 상황 (Summary of Work Done)
+Gemini CLI가 다음 작업을 이어가거나 컨텍스트를 파악할 때 참고하기 위한 지금까지의 작업 내역입니다.
+
+- **에셋 관리 시스템 (AssetManager)**: 
+  - `Addressables`를 기반으로 한 싱글톤 매니저 구현.
+  - 비동기(`LoadAssetAsync`, `LoadGameObjectAsync`) 및 동기(`LoadAsset`, `LoadGameObject`) 로드 메서드 제공.
+  - 로드된 에셋 및 프리팹 캐싱 기능(`_addressablePacket`) 적용 완료.
+- **스테이지 및 규칙 데이터 주입 (StageInjection)**:
+  - `GameRule.json`과 `Stage.json`을 읽어 게임 시작 전 전체 설정값인 `GameSpec`을 완성하는 구조 구축.
+  - JSON 데이터를 파싱하여 코어 모델(Model)에 전달할 준비 완료.
+- **로비 및 씬 흐름 연동 (LobbyMain)**:
+  - 로비 씬 진입 시 초기화 로직 구현.
+  - '스테이지 시작' 시 `StageInjection`을 통해 사양서를 만들고 문제가 없을 시 `GameScene`으로 이동하도록 씬 플로우 연결.
+- **퍼즐 뷰-컨트롤러 기초 (PuzzleCore)**:
+  - `PuzzleBlockCollider`를 통해 유니티 이벤트(클릭 등)를 `PuzzleBlockView`로 전달하는 기본 구조 작성 완료.

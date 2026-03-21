@@ -9,6 +9,12 @@ public class PuzzleBlockView : MonoBehaviour
     /// <summary> 블럭 이미지 </summary>
     [SerializeField]
     private SpriteRenderer _spriteRenderer;
+    [SerializeField]
+    private PuzzleBlockCollider _boxCollider;
+
+    /// <summary> 외부(Collider 등)에서 스프라이트 정보를 얻기 위한 프로퍼티 </summary>
+    public SpriteRenderer SpriteRenderer => _spriteRenderer;
+
     /// <summary> 이 뷰와 연결된 블럭 모델 데이터 </summary>
     private PuzzleBlock _blockData;
     /// <summary> 이 블럭이 위치한 보드상의 그리드 좌표 </summary>
@@ -49,6 +55,11 @@ public class PuzzleBlockView : MonoBehaviour
                 successCallback = (sprite) =>
                 {
                     _spriteRenderer.sprite = sprite;
+
+                    if (_boxCollider != null)
+                    {
+                        _boxCollider.AdjustColliderSize();
+                    }
                 },
                 failedCallback = () =>
                 {
@@ -65,6 +76,9 @@ public class PuzzleBlockView : MonoBehaviour
     /// </summary>
     public void OnClicked()
     {
+        string blockId = _blockData != null ? _blockData.GetBlockId() : "Unknown";
+        Debug.Log($"[PuzzleBlockView] 블럭 클릭됨! 아이디: {blockId}, 위치: ({_gridPos.X}, {_gridPos.Y})");
+
         if (_boardView != null)
         {
             _boardView.OnBlockInput(_gridPos);

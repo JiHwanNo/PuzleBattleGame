@@ -8,6 +8,10 @@ using UnityEngine;
 public class PuzzleCellView : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer _spriteRenderer;
+    [SerializeField] private PuzzleCellCollider _boxCollider;
+    
+    /// <summary> 외부(Collider 등)에서 스프라이트 정보를 얻기 위한 프로퍼티 </summary>
+    public SpriteRenderer SpriteRenderer => _spriteRenderer;
 
     private PuzzleCell _cellData;
     private GridPos _gridPos;
@@ -41,6 +45,11 @@ public class PuzzleCellView : MonoBehaviour
             {
                 case CellType.Normal:
                     _spriteRenderer.gameObject.SetActive(true);
+                    
+                    if (_boxCollider != null)
+                    {
+                        _boxCollider.AdjustColliderSize();
+                    }
                     break;
                 case CellType.Close:
                     _spriteRenderer.gameObject.SetActive(false);
@@ -54,6 +63,9 @@ public class PuzzleCellView : MonoBehaviour
     /// </summary>
     public void OnClicked()
     {
+        string cellType = _cellData != null ? _cellData.CellType.ToString() : "Unknown";
+        Debug.Log($"[PuzzleCellView] 셀 클릭됨! 타입: {cellType}, 위치: ({_gridPos.X}, {_gridPos.Y})");
+
         if (_boardView == null || _cellData == null)
             return;
 

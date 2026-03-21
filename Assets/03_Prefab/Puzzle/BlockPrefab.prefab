@@ -183,6 +183,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: '::'
   _block: {fileID: 3245442904815136949}
+  _boxCollider2D: {fileID: 3607233666545945202}
 --- !u!1 &5534488484369742590
 GameObject:
   m_ObjectHideFlags: 0
@@ -230,3 +231,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PuzzleBlockView
   _spriteRenderer: {fileID: 8277096078826159508}
+  _boxCollider: {fileID: 5157722298632226235}

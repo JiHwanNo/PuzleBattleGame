@@ -47,6 +47,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PuzzleCellView
   _spriteRenderer: {fileID: 7356675218793958115}
+  _boxCollider: {fileID: 5992476988701590361}
 --- !u!1 &6266924397141832464
 GameObject:
   m_ObjectHideFlags: 0
@@ -59,7 +60,7 @@ GameObject:
   - component: {fileID: 7757747536334578536}
   - component: {fileID: 5992476988701590361}
   m_Layer: 0
-  m_Name: GameObject
+  m_Name: Collider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -138,7 +139,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3d0b562b699cd7943a4c6a1639ac9f42, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  _cell: {fileID: 0}
+  _cell: {fileID: -7693220987799147935}
+  _boxCollider2D: {fileID: 7757747536334578536}
 --- !u!1 &6508234895769035561
 GameObject:
   m_ObjectHideFlags: 0
