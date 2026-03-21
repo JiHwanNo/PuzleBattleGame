@@ -1,5 +1,4 @@
 using Puzzle.Core;
-using UnityEditor.Build.Pipeline;
 using UnityEngine;
 
 /// <summary>
@@ -7,19 +6,38 @@ using UnityEngine;
 /// </summary>
 public class PuzzleCellView : MonoBehaviour
 {
-    [SerializeField] private SpriteRenderer _spriteRenderer;
-    [SerializeField] private PuzzleCellCollider _boxCollider;
+    /// <summary> 셀 이미지를 렌더링할 컴포넌트 </summary>
+    [SerializeField] 
+    private SpriteRenderer _spriteRenderer;
+
+    /// <summary> 셀의 물리 충돌을 담당하는 컴포넌트 </summary>
+    [SerializeField] 
+    private PuzzleCellCollider _boxCollider;
     
     /// <summary> 외부(Collider 등)에서 스프라이트 정보를 얻기 위한 프로퍼티 </summary>
-    public SpriteRenderer SpriteRenderer => _spriteRenderer;
+    public SpriteRenderer SpriteRenderer
+    {
+        get
+        {
+            return _spriteRenderer;
+        }
+    }
 
+    /// <summary> 연결된 셀 모델 데이터 </summary>
     private PuzzleCell _cellData;
+
+    /// <summary> 보드 내 그리드 좌표 </summary>
     private GridPos _gridPos;
+
+    /// <summary> 관리 중인 보드 뷰 참조 </summary>
     private PuzzleBoardView _boardView;
 
     /// <summary>
     /// 셀 뷰를 특정 모델 데이터 및 좌표로 초기화합니다.
     /// </summary>
+    /// <param name="cellData">연결할 셀 모델 객체</param>
+    /// <param name="pos">배치될 그리드 좌표</param>
+    /// <param name="boardView">보드 뷰 객체</param>
     public void Initialize(PuzzleCell cellData, GridPos pos, PuzzleBoardView boardView)
     {
         _cellData = cellData;
@@ -34,10 +52,15 @@ public class PuzzleCellView : MonoBehaviour
     /// </summary>
     public void UpdateVisual()
     {
-        if (_cellData == null) return;
+        if (_cellData == null)
+        {
+            return;
+        }
 
         if (_spriteRenderer == null)
+        {
             _spriteRenderer = GetComponent<SpriteRenderer>();
+        }
 
         if (_spriteRenderer != null)
         {
@@ -51,6 +74,7 @@ public class PuzzleCellView : MonoBehaviour
                         _boxCollider.AdjustColliderSize();
                     }
                     break;
+
                 case CellType.Close:
                     _spriteRenderer.gameObject.SetActive(false);
                     break;
@@ -59,14 +83,14 @@ public class PuzzleCellView : MonoBehaviour
     }
 
     /// <summary>
-    /// 보드 뷰(Raycast) 등에 의해 이 셀이 클릭되었을 때 호출됩니다.
+    /// 보드 뷰 등에 의해 이 셀이 클릭되었다고 판정되었을 때 호출됩니다.
     /// </summary>
     public void OnClicked()
     {
-        string cellType = _cellData != null ? _cellData.CellType.ToString() : "Unknown";
-
         if (_boardView == null || _cellData == null)
+        {
             return;
+        }
 
         if (_cellData.CellType == CellType.Normal)
         {

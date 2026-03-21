@@ -30,7 +30,7 @@ namespace Puzzle.Core
         {
             _objectives = objectives ?? new List<ObjectiveData>();
             CurrentScore = 0;
-            _currentCounts.Clear();
+            _currentCounts = new Dictionary<string, int>();
         }
 
         /// <summary>
@@ -45,11 +45,13 @@ namespace Puzzle.Core
 
             // 2. 특정 블럭 수집 카운트 갱신
             if (_currentCounts.ContainsKey(blockId))
+            {
                 _currentCounts[blockId]++;
+            }
             else
+            {
                 _currentCounts[blockId] = 1;
-
-            UnityEngine.Debug.Log($"[ObjectiveManager] 블럭 파괴됨: {blockId}, 현재 점수: {CurrentScore}");
+            }
         }
 
         /// <summary>
@@ -58,7 +60,10 @@ namespace Puzzle.Core
         /// <returns>모든 목표를 달성했다면 true, 하나라도 미달성이라면 false</returns>
         public bool IsAllObjectivesCleared()
         {
-            if (_objectives == null || _objectives.Count == 0) return false;
+            if (_objectives == null || _objectives.Count == 0)
+            {
+                return false;
+            }
 
             foreach (var obj in _objectives)
             {
@@ -66,13 +71,19 @@ namespace Puzzle.Core
                 {
                     case ObjectiveType.Score:
                         // 목표 점수에 도달했는지 체크
-                        if (CurrentScore < obj.count) return false;
+                        if (CurrentScore < obj.count)
+                        {
+                            return false;
+                        }
                         break;
 
                     case ObjectiveType.CollectBlock:
                         // 특정 블럭을 목표 개수만큼 모았는지 체크
                         _currentCounts.TryGetValue(obj.targetId, out int count);
-                        if (count < obj.count) return false;
+                        if (count < obj.count)
+                        {
+                            return false;
+                        }
                         break;
                 }
             }

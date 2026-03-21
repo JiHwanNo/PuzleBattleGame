@@ -8,7 +8,7 @@ public class LobbyMain : MonoBehaviour
     /// <summary>
     /// 객체 생성 시 초기화를 수행합니다.
     /// </summary>
-    void Awake()
+    private void Awake()
     {
         Main.Instance.Init(Main.Scene.LobbyScene);
         var popupManager = PopupManager.Instance;
@@ -17,12 +17,13 @@ public class LobbyMain : MonoBehaviour
     /// <summary>
     /// 스테이지 시작 버튼 클릭 시 호출되며, 데이터를 준비하고 게임 씬으로 이동합니다.
     /// </summary>
-    void OnClickStartStage()
+    public void OnClickStartStage()
     {
         string rulePath = "GameRule.json";
         string stagePath = "Stage.json";
 
         StageInjection.Instance.MakeGameSpec(rulePath, stagePath);
+        
         if (StageInjection.Instance.GetGameSpec() != null)
         {
             Main.Instance.MoveScene(Main.Scene.GameScene);

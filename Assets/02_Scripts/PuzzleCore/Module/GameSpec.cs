@@ -23,14 +23,24 @@ namespace Puzzle.Core
         /// 현재 설정된 게임 규칙 데이터를 반환합니다.
         /// </summary>
         /// <returns>적용 중인 RuleData 객체</returns>
-        public RuleData GetRule() => rule;
+        public RuleData GetRule()
+        {
+            return rule;
+        }
 
         /// <summary>
         /// 특정 블록 ID에 해당하는 블록 정보를 검색하여 반환합니다.
         /// </summary>
         /// <param name="blockId">검색할 블록의 고유 식별자</param>
         /// <returns>블록 데이터 (없을 경우 null)</returns>
-        public BlockData GetBlock(string blockId) => blocks?.Find(b => b.blockId == blockId);
+        public BlockData GetBlock(string blockId)
+        {
+            if (blocks == null)
+            {
+                return null;
+            }
+            return blocks.Find(b => b.blockId == blockId);
+        }
     }
 
     /// <summary>

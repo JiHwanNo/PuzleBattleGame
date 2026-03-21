@@ -24,7 +24,9 @@ public class PopupManager : MonoBehaviour
             {
                 var scene = SceneManager.GetSceneByName(PopupSceneName);
                 if (!scene.isLoaded)
+                {
                     SceneManager.LoadScene(PopupSceneName, LoadSceneMode.Additive);
+                }
 
                 _instance = FindFirstObjectByType<PopupManager>();
 

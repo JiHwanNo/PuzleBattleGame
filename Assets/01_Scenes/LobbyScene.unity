@@ -419,6 +419,18 @@ PrefabInstance:
       propertyPath: root
       value: 
       objectReference: {fileID: 809702437}
+    - target: {fileID: 2067200797208832703, guid: 1dd7abb55ae232d44b600f5607c47108, type: 3}
+      propertyPath: _root
+      value: 
+      objectReference: {fileID: 809702437}
+    - target: {fileID: 2067200797208832703, guid: 1dd7abb55ae232d44b600f5607c47108, type: 3}
+      propertyPath: _unityButton
+      value: 
+      objectReference: {fileID: 7208696125696649658}
+    - target: {fileID: 2067200797208832703, guid: 1dd7abb55ae232d44b600f5607c47108, type: 3}
+      propertyPath: _callbackName
+      value: OnClickStartStage
+      objectReference: {fileID: 0}
     - target: {fileID: 3615526853626541721, guid: 1dd7abb55ae232d44b600f5607c47108, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -508,6 +520,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1dd7abb55ae232d44b600f5607c47108, type: 3}
+--- !u!114 &7208696125696649658 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6152134135614511035, guid: 1dd7abb55ae232d44b600f5607c47108, type: 3}
+  m_PrefabInstance: {fileID: 7208696125696649657}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

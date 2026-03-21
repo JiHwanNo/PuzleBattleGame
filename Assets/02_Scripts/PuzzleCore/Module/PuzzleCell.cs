@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Puzzle.Core
 {
     /// <summary>
@@ -9,20 +11,26 @@ namespace Puzzle.Core
         /// <summary> 보드 내에서 이 셀이 위치한 그리드 좌표 </summary>
         public GridPos Position { get; }
         
-        /// <summary> 이 셀의 종류 (일반, 장애물 등) </summary>
+        /// <summary> 이 셀의 종류 (일반, 생성기, 장애물 등) </summary>
         public CellType CellType { get; set; }
         
         /// <summary> 이 셀 위에 놓인 블럭 객체. null이면 빈 공간입니다. </summary>
         public PuzzleBlock Block { get; set; }
         
-        /// <summary> 이 셀의 바닥판(Panel) 객체. </summary>
+        /// <summary> 이 셀의 바닥판(Panel) 객체 </summary>
         public PuzzlePanel Panel { get; set; }
 
         /// <summary> 연출이나 특정 로직으로 인해 셀이 잠겼는지 여부 </summary>
-        public bool isLocked;
+        private bool _isLocked;
+        /// <summary> 잠금 상태 프로퍼티 </summary>
+        public bool IsLocked
+        {
+            get => _isLocked;
+            set => _isLocked = value;
+        }
 
         /// <summary> 이 셀이 생성기(Generator)일 경우, 생성 가능한 블럭 ID 리스트 </summary>
-        public System.Collections.Generic.List<string> generatorBlockIds = new System.Collections.Generic.List<string>();
+        public List<string> generatorBlockIds = new List<string>();
 
         /// <summary>
         /// 새로운 셀을 지정된 위치에 생성합니다.
@@ -34,6 +42,7 @@ namespace Puzzle.Core
             CellType = CellType.Normal; 
             Block = null;
             Panel = null;
+            _isLocked = false;
         }
 
         /// <summary>
@@ -45,9 +54,11 @@ namespace Puzzle.Core
         public PuzzleBlock GenerateBlock(GameSpec spec, PuzzleRandom random)
         {
             if (CellType != CellType.Generator || generatorBlockIds.Count == 0)
+            {
                 return null;
+            }
 
-            // 리스트 중 랜덤하게 하나 선택
+            // 리스트 중 랜덤하게 하나 선택 (원본 로직 보존)
             int index = random.Next(0, generatorBlockIds.Count);
             string blockId = generatorBlockIds[index];
 
@@ -67,10 +78,14 @@ namespace Puzzle.Core
         public void Update(GridPos input)
         {
             if (Block != null)
+            {
                 Block.Update();
+            }
 
             if (Panel != null)
+            {
                 Panel.Update();
+            }
         }
     }
 }

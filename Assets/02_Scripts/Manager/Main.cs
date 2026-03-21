@@ -8,12 +8,16 @@ public class Main
 {
     #region Singleton
     private static Main _instance;
+
+    /// <summary> 전역 접근을 위한 싱글톤 인스턴스 </summary>
     public static Main Instance
     {
         get
         {
             if (_instance == null)
+            {
                 _instance = new Main();
+            }
             return _instance;
         }
     }
@@ -38,8 +42,10 @@ public class Main
     internal void MoveScene(Scene loadScene)
     {
         Scene preScene = _curScene;
-        if(preScene != Scene.None)
+        if (preScene != Scene.None)
+        {
             SceneManager.UnloadSceneAsync(preScene.ToString());
+        }
 
         SceneManager.LoadSceneAsync(loadScene.ToString(), LoadSceneMode.Additive);
         _curScene = loadScene;

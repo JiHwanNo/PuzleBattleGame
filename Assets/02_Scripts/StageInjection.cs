@@ -9,13 +9,16 @@ public class StageInjection
 {
     #region Singleton
     private static StageInjection _instance;
+
+    /// <summary> 전역 접근을 위한 싱글톤 인스턴스 </summary>
     public static StageInjection Instance
     {
         get
         {
             if (_instance == null)
+            {
                 _instance = new StageInjection();
-
+            }
             return _instance;
         }
     }
@@ -28,7 +31,10 @@ public class StageInjection
     /// 현재 보관 중인 게임 사양서 객체를 반환합니다.
     /// </summary>
     /// <returns>구성된 GameSpec 객체</returns>
-    public GameSpec GetGameSpec() => _gameSpec;
+    public GameSpec GetGameSpec()
+    {
+        return _gameSpec;
+    }
 
     /// <summary>
     /// 지정된 규칙과 스테이지 에셋 주소로부터 데이터를 로드하여 게임 사양서(GameSpec)를 완성합니다.
@@ -39,7 +45,7 @@ public class StageInjection
     {
         _gameSpec = new GameSpec();
 
-        // 1. 규칙(Rule) 데이터 로드 및 파싱
+        // 1. 규칙(Rule) 데이터 로드 및 파싱 (원본 로직 보존)
         TextAsset ruleAsset = AssetManager.Instance.LoadAsset<TextAsset>(ruleAddress);
         if (ruleAsset != null)
         {
