@@ -51,77 +51,65 @@ public class PuzzleGameController : MonoBehaviour
         isInitialized = true;
     }
 
-
-
-
     /// <summary>
-    /// 매 프레임마다 입력을 감지하여 보드 내의 어떤 블럭이 클릭되었는지 
-    /// 중앙(Board)에서 한 번만 연산(Raycast)하여 판별합니다.
-    /// 클릭 지점에 여러 콜라이더가 있을 수 있으므로 OverlapPointAll을 사용하여 모든 충돌체를 확인합니다.
+    /// 매 프레임마다 입력을 감지합니다.
+    /// 누르고 있는 동안은 인풋을 보드에 전달하고, 뗐을 때만 보드에게 '입력 종료'를 알립니다.
     /// </summary>
     private void Update()
     {
-        if (!isInitialized)
+        if (!isInitialized || _board == null)
             return;
 
-        if (TryGetPointerDownPosition(out Vector2 screenPosition))
+        // 1. 마우스/터치를 누르고 있는 중인가?
+        bool isPointerHeld = IsPointerHeld();
+        bool isPointerReleased = IsPointerReleased();
+
+        if (isPointerHeld)
         {
+            Vector2 screenPosition = GetPointerPosition();
             Vector2 worldPosition = Camera.main.ScreenToWorldPoint(screenPosition);
 
-            // 마우스 클릭 위치에 있는 모든 2D 콜라이더를 감지 (Physics2D)
-            Collider2D[] hitColliders = Physics2D.OverlapPointAll(worldPosition);
-
-            if (hitColliders != null && hitColliders.Length > 0)
+            // 현재 위치 아래의 콜라이더 감지
+            Collider2D hitCollider = Physics2D.OverlapPoint(worldPosition);
+            if (hitCollider != null)
             {
-                foreach (Collider2D hitCollider in hitColliders)
+                // 블럭 좌표를 찾아 보드에 전달 (View를 통해 좌표 획득)
+                if (hitCollider.TryGetComponent<PuzzleBlockCollider>(out var blockCollider))
                 {
-                    // 충돌한 객체에 PuzzleBlockCollider 컴포넌트가 있다면 클릭 이벤트 실행
-                    if (hitCollider.TryGetComponent<PuzzleBlockCollider>(out var blockCollider))
-                    {
-                        blockCollider.OnClickBlock();
-                    }
-
-                    // 충돌한 객체에 PuzzleCellCollider 컴포넌트가 있다면 클릭 이벤트 실행
-                    if (hitCollider.TryGetComponent<PuzzleCellCollider>(out var cellCollider))
-                    {
-                        cellCollider.OnClickCell();
-                    }
+                    blockCollider.OnClickBlock(); 
                 }
             }
         }
 
-        if (_board != null)
+        // 2. 마우스/터치를 뗐는가? -> 이때가 로직 처리 시점
+        if (isPointerReleased)
         {
-            // 쌓인 입력을 처리하고 보드 상태를 갱신
             _board.InputEnd();
-            _board.Update();
         }
+
+        // 3. 보드 논리 업데이트 (애니메이션, 낙하 등)
+        _board.Update();
     }
 
-    /// <summary>
-    /// 마우스 클릭 또는 터치 입력이 발생했는지 확인하고 해당 화면(Screen) 좌표를 반환합니다.
-    /// </summary>
-    /// <param name="position">입력이 발생한 화면 좌표</param>
-    /// <returns>입력이 발생했다면 true</returns>
-    private bool TryGetPointerDownPosition(out Vector2 position)
+    private bool IsPointerHeld()
     {
-        position = Vector2.zero;
-
-        // 마우스 입력 확인
-        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            position = Mouse.current.position.ReadValue();
-            return true;
-        }
-
-        // 터치 입력 확인
-        if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame)
-        {
-            position = Touchscreen.current.primaryTouch.position.ReadValue();
-            return true;
-        }
-
+        if (Mouse.current != null && Mouse.current.leftButton.isPressed) return true;
+        if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed) return true;
         return false;
     }
 
+    private bool IsPointerReleased()
+    {
+        if (Mouse.current != null && Mouse.current.leftButton.wasReleasedThisFrame) return true;
+        if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasReleasedThisFrame) return true;
+        return false;
+    }
+
+    private Vector2 GetPointerPosition()
+    {
+        if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed)
+            return Touchscreen.current.primaryTouch.position.ReadValue();
+        
+        return Mouse.current.position.ReadValue();
+    }
 }
