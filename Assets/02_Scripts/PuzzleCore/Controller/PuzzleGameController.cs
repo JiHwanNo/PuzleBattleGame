@@ -93,15 +93,8 @@ public class PuzzleGameController : MonoBehaviour
         if (_board != null)
         {
             // 쌓인 입력을 처리하고 보드 상태를 갱신
-            bool wasInputProcessed = _board.InputEnd();
+            _board.InputEnd();
             _board.Update();
-
-            // 입력이 처리되었거나, 현재 보드가 무언가 연산 중(Matching, Falling 등)이라면 화면 갱신
-            if ((wasInputProcessed || _board.State != BoardState.Waiting) && boardView != null)
-            {
-                // TODO: 추후 낱개 애니메이션 이벤트 기반으로 최적화 예정
-                boardView.RefreshBlocks();
-            }
         }
     }
 

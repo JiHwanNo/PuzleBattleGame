@@ -296,6 +296,26 @@ namespace Puzzle.Core
         }
 
         /// <summary>
+        /// 발생한 View 변화 데이터들을 가져오고 내부 리스트를 비웁니다.
+        /// </summary>
+        /// <returns>누적된 View 데이터 리스트</returns>
+        public List<BoardViewAction> FetchActions()
+        {
+            var result = _views.OrderBy(v => v.frame).ToList();
+            _views.Clear();
+            return result;
+        }
+
+        /// <summary>
+        /// 화면 연출을 위해 발생한 상태 변화(BoardViewAction)를 추가합니다.
+        /// </summary>
+        /// <param name="view">추가할 BoardViewAction 변화 데이터</param>
+        public void AddView(BoardViewAction view)
+        {
+            _views.Add(view);
+        }
+
+        /// <summary>
         /// 두 좌표에 있는 셀의 블럭 데이터를 서로 교환(Swap)합니다.
         /// </summary>
         private void SwapBlocks(GridPos a, GridPos b)
@@ -308,6 +328,22 @@ namespace Puzzle.Core
             var tempBlock = cellA.Block;
             cellA.Block = cellB.Block;
             cellB.Block = tempBlock;
+
+            // 스왑 연출 기록
+            AddView(new BoardViewAction 
+            { 
+                type = ViewType.Move, 
+                frame = (uint)_frameCount, 
+                position = a, 
+                targetPosition = b 
+            });
+            AddView(new BoardViewAction 
+            { 
+                type = ViewType.Move, 
+                frame = (uint)_frameCount, 
+                position = b, 
+                targetPosition = a 
+            });
         }
 
         /// <summary>
@@ -331,24 +367,6 @@ namespace Puzzle.Core
                 return cell;
 
             return null;
-        }
-
-        /// <summary>
-        /// 화면 연출을 위해 발생한 상태 변화(BoardViewAction)를 추가합니다.
-        /// </summary>
-        /// <param name="view">추가할 BoardViewAction 변화 데이터</param>
-        public void AddView(BoardViewAction view)
-        {
-            _views.Add(view);
-        }
-
-        /// <summary>
-        /// 발생한 View 변화 데이터들을 프레임 기준 내림차순으로 정렬하여 반환합니다.
-        /// </summary>
-        /// <returns>정렬된 View 데이터 리스트</returns>
-        public List<BoardViewAction> GetViewsDescending()
-        {
-            return _views.OrderByDescending(v => v.frame).ToList();
         }
     }
 }

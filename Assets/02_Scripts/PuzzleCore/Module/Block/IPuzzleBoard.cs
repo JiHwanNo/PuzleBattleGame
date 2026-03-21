@@ -11,6 +11,10 @@ namespace Puzzle.Core
         public uint frame;
         /// <summary> 연출의 종류 (파괴, 생성, 이동 등) </summary>
         public ViewType type;
+        /// <summary> 주가 되는 좌표 (생성 위치, 파괴 위치 등) </summary>
+        public GridPos position;
+        /// <summary> 이동 시 목적지 좌표 </summary>
+        public GridPos targetPosition;
     }
 
     /// <summary>
@@ -52,8 +56,8 @@ namespace Puzzle.Core
         /// <summary> 화면 연출을 위해 발생한 상태 변화를 추가합니다. </summary>
         void AddView(BoardViewAction view);
 
-        /// <summary> 발생한 View 변화 데이터들을 프레임 기준 내림차순으로 정렬하여 반환합니다. </summary>
-        List<BoardViewAction> GetViewsDescending();
+        /// <summary> 발생한 View 액션 리스트를 가져오고 보드 내역을 비웁니다. (소비형) </summary>
+        List<BoardViewAction> FetchActions();
 
         /// <summary> 지정된 좌표에 해당하는 셀 객체를 가져옵니다. </summary>
         PuzzleCell GetCell(GridPos pos);

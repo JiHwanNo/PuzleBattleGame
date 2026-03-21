@@ -108,6 +108,93 @@ public class PuzzleBoardView : MonoBehaviour
     }
 
     /// <summary>
+    /// 매 프레임마다 보드 모델로부터 발생한 액션들을 가져와 화면에 반영합니다.
+    /// </summary>
+    private void Update()
+    {
+        if (_board == null) return;
+
+        // 보드로부터 발생한 연출 요청(Action)들을 가져옴
+        List<BoardViewAction> actions = _board.FetchActions();
+        
+        if (actions != null && actions.Count > 0)
+        {
+            foreach (var action in actions)
+            {
+                ProcessViewAction(action);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 개별 보드 액션 타입에 따라 시각적 연출을 수행합니다.
+    /// </summary>
+    /// <param name="action">수행할 연출 정보</param>
+    private void ProcessViewAction(BoardViewAction action)
+    {
+        switch (action.type)
+        {
+            case ViewType.Move:
+                HandleMoveAction(action.position, action.targetPosition);
+                break;
+            case ViewType.Destroy:
+                HandleDestroyAction(action.position);
+                break;
+            case ViewType.Create:
+                HandleCreateAction(action.position);
+                break;
+        }
+    }
+
+    private void HandleMoveAction(GridPos from, GridPos to)
+    {
+        if (_blockViews.TryGetValue(from, out PuzzleBlockView view))
+        {
+            // 딕셔너리 위치 갱신
+            _blockViews.Remove(from);
+            _blockViews[to] = view;
+
+            // 월드 좌표 계산
+            Vector3 targetWorldPos = new Vector3(to.X * cellSize, to.Y * cellSize, 0);
+
+            // TODO: DOTween 등을 사용하여 부드러운 이동 애니메이션 적용 가능
+            // 현재는 즉시 이동
+            view.transform.localPosition = targetWorldPos;
+            view.Initialize(view.GetBlockData(), to, this); // 좌표 정보 동기화
+        }
+    }
+
+    private void HandleDestroyAction(GridPos pos)
+    {
+        if (_blockViews.TryGetValue(pos, out PuzzleBlockView view))
+        {
+            _blockViews.Remove(pos);
+            
+            // TODO: 파괴 애니메이션(이펙트 등) 후 Destroy 호출
+            if (view != null && view.gameObject != null)
+            {
+                Destroy(view.gameObject);
+            }
+        }
+    }
+
+    private void HandleCreateAction(GridPos pos)
+    {
+        // 보드 모델에서 최신 블럭 데이터를 가져옴
+        PuzzleCell cell = _board.GetCell(pos);
+        if (cell != null && cell.Block != null)
+        {
+            // 이미 해당 위치에 뷰가 있다면 제거 (안전 장치)
+            if (_blockViews.ContainsKey(pos))
+            {
+                HandleDestroyAction(pos);
+            }
+
+            CreateBlockView(pos, cell.Block);
+        }
+    }
+
+    /// <summary>
     /// 특정 블럭 뷰에서 입력(클릭/터치)이 발생했을 때 호출됩니다.
     /// </summary>
     /// <param name="pos">입력이 발생한 그리드 좌표</param>
@@ -122,7 +209,7 @@ public class PuzzleBoardView : MonoBehaviour
 
     /// <summary>
     /// 보드 모델의 현재 상태에 맞춰 블럭 뷰들을 강제로 동기화(재생성)합니다.
-    /// (임시 시각화용이며 추후 애니메이션 및 이벤트 기반으로 개선이 필요합니다)
+    /// 초기화 시나 상태 복구 시 사용됩니다.
     /// </summary>
     public void RefreshBlocks()
     {

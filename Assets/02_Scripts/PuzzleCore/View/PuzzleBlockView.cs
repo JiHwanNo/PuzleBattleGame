@@ -72,6 +72,11 @@ public class PuzzleBlockView : MonoBehaviour
     }
 
     /// <summary>
+    /// 이 뷰가 참조하고 있는 블럭 모델 데이터를 반환합니다.
+    /// </summary>
+    public PuzzleBlock GetBlockData() => _blockData;
+
+    /// <summary>
     /// 보드 뷰(Raycast) 등에 의해 이 블럭이 클릭되었다고 판정되었을 때 호출됩니다.
     /// </summary>
     public void OnClicked()
