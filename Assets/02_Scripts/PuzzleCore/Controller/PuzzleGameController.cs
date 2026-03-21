@@ -7,7 +7,7 @@ public class PuzzleGameController : MonoBehaviour
     [Header("View References")]
     public PuzzleBoardView boardView; // 화면의 그래픽 View 스크립트 참조
 
-    private PuzzleBoard _board; // 코어 로직 엔진 및 데이터
+    private IPuzzleBoard _board; // 코어 로직 엔진 및 데이터
 
     bool isInitialized = false;
     void Start()
@@ -20,7 +20,22 @@ public class PuzzleGameController : MonoBehaviour
             gameSpec = gameSpec ?? new GameSpec();
         }
 
-        _board = new PuzzleBoard();
+        // 게임 타입에 따라 적절한 보드 구현체 생성
+        switch (gameSpec.rule.puzzleType)
+        {
+            case PuzzleType.ThreeMatch:
+                _board = new ThreeMatchPuzzleBoard();
+                break;
+            case PuzzleType.Link:
+                // TODO: 링크 방식 보드 구현체 생성
+                _board = new ThreeMatchPuzzleBoard(); // 임시로 3매치 보드 할당
+                break;
+            default:
+                Debug.LogWarning($"알 수 없는 퍼즐 타입({gameSpec.rule.puzzleType})입니다. 기본 ThreeMatch 보드로 초기화합니다.");
+                _board = new ThreeMatchPuzzleBoard();
+                break;
+        }
+
         _board.Initialize(gameSpec);
 
         // 3. 뷰(View)에 데이터 전달하여 화면에 그리기
@@ -72,6 +87,19 @@ public class PuzzleGameController : MonoBehaviour
                         cellCollider.OnClickCell();
                     }
                 }
+            }
+        }
+
+        if (_board != null)
+        {
+            // 쌓인 입력을 처리하고 보드 상태를 갱신
+            bool wasProcessed = _board.InputEnd();
+            _board.Update();
+
+            if (wasProcessed && boardView != null)
+            {
+                // 입력 처리 후 뷰를 동기화하여 변경사항(스왑, 매치)을 화면에 반영
+                boardView.RefreshBlocks();
             }
         }
     }

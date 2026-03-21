@@ -20,7 +20,7 @@ public class PuzzleBoardView : MonoBehaviour
     public float cellSize = 1.0f;
 
     /// <summary> 현재 연결된 보드 모델 데이터 </summary>
-    private PuzzleBoard _board;
+    private IPuzzleBoard _board;
     
     /// <summary> 화면에 생성된 셀 뷰들을 좌표별로 관리하는 딕셔너리 </summary>
     private Dictionary<GridPos, PuzzleCellView> _cellViews = new Dictionary<GridPos, PuzzleCellView>();
@@ -32,7 +32,7 @@ public class PuzzleBoardView : MonoBehaviour
     /// 전달받은 보드 데이터를 바탕으로 화면에 퍼즐 판을 그립니다.
     /// </summary>
     /// <param name="boardData">화면에 표시할 보드 모델 객체</param>
-    public void DrawBoard(PuzzleBoard boardData)
+    public void DrawBoard(IPuzzleBoard boardData)
     {
         _board = boardData;
        
@@ -117,6 +117,37 @@ public class PuzzleBoardView : MonoBehaviour
         {
             Debug.Log($"[PuzzleBoardView] Block Input Detected: ({pos.X}, {pos.Y})");
             _board.Input(pos);
+        }
+    }
+
+    /// <summary>
+    /// 보드 모델의 현재 상태에 맞춰 블럭 뷰들을 강제로 동기화(재생성)합니다.
+    /// (임시 시각화용이며 추후 애니메이션 및 이벤트 기반으로 개선이 필요합니다)
+    /// </summary>
+    public void RefreshBlocks()
+    {
+        if (_board == null) return;
+
+        // 기존 블럭 뷰 모두 제거
+        foreach (var view in _blockViews.Values)
+        {
+            if (view != null && view.gameObject != null)
+            {
+                Destroy(view.gameObject);
+            }
+        }
+        _blockViews.Clear();
+
+        // 현재 모델 데이터(Cells)에 맞춰 블럭 다시 생성
+        foreach (var kvp in _board.Cells)
+        {
+            GridPos gridPos = kvp.Key;
+            PuzzleCell cell = kvp.Value;
+
+            if (cell.Block != null)
+            {
+                CreateBlockView(gridPos, cell.Block);
+            }
         }
     }
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// 개별 퍼즐 블럭의 시각적 표현과 애니메이션을 담당하는 클래스입니다.
 /// </summary>
-public class PuzzleBlockView : MonoBehaviour
+public class PuzzleBlockView : MonoBehaviour    
 {
     /// <summary> 블럭 이미지 </summary>
     [SerializeField]

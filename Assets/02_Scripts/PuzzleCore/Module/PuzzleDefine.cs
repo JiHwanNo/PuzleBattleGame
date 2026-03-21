@@ -135,12 +135,18 @@ namespace Puzzle.Core
         Lock = 2,                   // 로직상 잠긴 상태
     }
 
-    /// <summary> 유저의 조작 방식 </summary>
+    /// <summary> 
+    /// 유저의 조작 방식 (다중 선택 가능)
+    /// [Flags] 특성과 비트 시프트(<<)를 사용하여 하나의 블럭이 여러 조작법을 동시에 가질 수 있게 합니다.
+    /// 예: Swap(0001) | Touch(0100) = 0101 (5). 이렇게 합쳐진 값은 HasFlag()로 각각 판별할 수 있습니다.
+    /// </summary>
+    [Flags]
     public enum InputType
     {
         None = 0,                   // 조작 불가
-        Swap = 1,                   // 위치 바꾸기
-        Link = 2,                   // 연결하기
+        Swap = 1 << 0,              // 위치 바꾸기 (1)
+        Link = 1 << 1,              // 연결하기 (2)
+        Touch = 1 << 2,             // 터치(클릭)하기 (4)
     }
 
     /// <summary> 블럭 파괴의 원인 및 방식 </summary>

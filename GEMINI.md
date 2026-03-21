@@ -10,10 +10,16 @@
 - **상세 주석**: 모든 **메서드(Method)** 및 **매개변수(Parameter)**에는 해당 기능이 어떤 용도로 쓰이는지, 매개변수가 무엇을 의미하는지에 대한 상세 주석을 반드시 작성합니다. (XML 주석 형식 `///` 권장)
 - **설명**: 복잡한 로직이나 데이터 구조를 수정할 때는 의도를 명확히 설명하는 주석을 추가합니다.
 
-## 🏗️ 2. 아키텍처 원칙 (Architecture)
-- **Model-View 분리**: 코어 로직(Model)과 시각적 연출(View)을 엄격히 분리합니다.
-- **엔진 독립성**: Model 클래스(예: `PuzzleBoard`, `PuzzleCell` 등)는 `UnityEngine` 종속성을 최소화하여 순수 C# 논리로 작성합니다.
-- **데이터 기반**: 스테이지 구성 및 게임 규칙은 직접 코딩하지 않고 JSON 데이터 주입(`Injection`) 방식을 통해 처리합니다.
+## 🏗️ 2. 핵심 아키텍처 원칙 (Core Architecture)
+- **다양한 퍼즐 지원**: 3매치, 링크, 육각형 등 여러 형태의 퍼즐 게임을 유연하게 수용할 수 있도록 `IPuzzleBoard` 인터페이스 및 능력(Capability) 기반의 블럭 아키텍처를 사용합니다.
+- **데이터 기반 생성 (GameSpec)**: 스테이지 구성(Stage)과 게임 규칙(Rule)은 직접 코딩하지 않고 JSON 데이터를 로드하여 `GameSpec` 객체로 병합한 뒤, 이를 Model에 주입(`Injection`)하는 방식으로 게임을 생성합니다.
+- **엄격한 MVC 분리**: 
+  - `Model` (PuzzleBoard, PuzzleBlock 등): 유니티 엔진(`UnityEngine`)에 대한 종속성 없이 순수 C# 논리로만 작성됩니다.
+  - `View` (PuzzleBoardView 등): Model의 상태 변화(`BoardViewAction`)를 전달받아 시각적 연출과 애니메이션만을 담당합니다.
+  - `Controller` (PuzzleGameController): 유저의 입력을 감지하고 큐에 담아 Model에 전달하며, 전체적인 게임 루프를 제어합니다.
+- **결정론적 리플레이(Replay) 시스템**:
+  - 완벽한 리플레이 기능을 지원하기 위해 모든 유저의 **조작(Input)은 발생한 프레임(Frame)과 함께 큐(Queue)에 저장**되어 순차적으로 처리됩니다.
+  - **공유 난수(Random) 클래스**: 난수 생성은 유니티 기본 랜덤이 아닌 단일 난수 클래스를 공유하여 사용합니다. 시드(Seed)와 프레임을 일정하게 유지함으로써 동일한 입력에 대해 항상 동일한 결과(결정론적 작동)를 보장합니다.
 
 ## 📛 3. 명명 규칙 (Naming Convention)
 - **클래스/메서드/공개 필드**: `PascalCase` (예: `PuzzleGameController`, `Initialize`)
@@ -42,5 +48,17 @@ Gemini CLI가 다음 작업을 이어가거나 컨텍스트를 파악할 때 참
 - **로비 및 씬 흐름 연동 (LobbyMain)**:
   - 로비 씬 진입 시 초기화 로직 구현.
   - '스테이지 시작' 시 `StageInjection`을 통해 사양서를 만들고 문제가 없을 시 `GameScene`으로 이동하도록 씬 플로우 연결.
-- **퍼즐 뷰-컨트롤러 기초 (PuzzleCore)**:
-  - `PuzzleBlockCollider`를 통해 유니티 이벤트(클릭 등)를 `PuzzleBlockView`로 전달하는 기본 구조 작성 완료.
+- **퍼즐 뷰 및 물리 충돌 연동 (PuzzleCore - View/Collider)**:
+  - `PuzzleBlockCollider` 및 `PuzzleCellCollider`를 통해 유니티 `OnMouseDown` 이벤트를 감지하여 논리 영역으로 전달하는 구조 완성.
+  - Addressables로 스프라이트가 비동기 로드된 후, `SpriteRenderer`의 실제 이미지 크기(`bounds.size`)를 읽어와 `BoxCollider2D`의 크기를 동적으로 자동 조절하는 로직 적용.
+- **인터페이스 기반 보드 아키텍처 도입 (IPuzzleBoard)**:
+  - 단일 구체 클래스에 의존하던 보드 모델을 `IPuzzleBoard`로 추상화하여, 3매치, 링크 등 다양한 게임 모드를 유연하게 교체(팩토리 패턴)할 수 있는 기반 마련.
+  - 시각적 연출 요청(Action) 데이터를 공통 규격인 `BoardViewAction` 클래스로 분리.
+- **다중 입력(Capability) 기반 블럭 아키텍처 (Strategy Pattern)**:
+  - 블럭의 조작 방식을 비트 플래그(`[Flags] enum InputType`)로 변경하여 하나의 블럭이 다중 조작(예: 터치+스왑)을 지원할 수 있도록 설계.
+  - `PuzzleBlock`을 추상 클래스로 두고, 조작 능력에 따라 `ITouchableBlock`, `ISwappableBlock`, `ILinkableBlock` 등의 인터페이스를 선택적으로 상속받아 구현.
+  - `PuzzleBlockFactory`를 통해 JSON 데이터의 `InputType` 속성에 맞는 구체적인 블럭(예: `NormalBlock`, `BombBlock`)을 동적으로 생성.
+- **3매치(ThreeMatch) 코어 로직 기초 구현**:
+  - `ThreeMatchPuzzleBoard.cs`를 생성하여 첫 번째 클릭과 두 번째 클릭을 통한 인접 블럭 판별 및 스왑(Swap) 로직 구현.
+  - 하드코딩된 로직 대신 블럭이 가진 능력(인터페이스)을 확인(`is ISwappableBlock`)하여 블럭 내부의 스왑 로직을 실행하도록 유연하게 개선.
+  - Controller 루프에서 큐(Queue)에 쌓인 입력을 소모(`InputEnd()`)하고 변경 사항이 있으면 뷰를 동기화(`RefreshBlocks()`)하도록 연결 완료.
