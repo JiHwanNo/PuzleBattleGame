@@ -65,8 +65,9 @@ public class PuzzleBoardView : MonoBehaviour
         // 그리드 좌표를 월드 좌표(Vector3)로 변환
         Vector3 worldPos = new Vector3(gridPos.X * cellSize, gridPos.Y * cellSize, 0);
 
-        // 셀 프리팹 인스턴스화
-        GameObject cellObj = Instantiate(cellPrefab, worldPos, Quaternion.identity, this.transform);
+        // 풀에서 셀 가져오기 (없으면 생성)
+        GameObject cellObj = PoolManager.Instance.Get(cellPrefab, this.transform);
+        cellObj.transform.localPosition = worldPos;
         cellObj.name = $"Cell_{gridPos.X}_{gridPos.Y}";
 
         // 뷰 컴포넌트 추가 및 초기화
@@ -94,8 +95,9 @@ public class PuzzleBoardView : MonoBehaviour
         // 그리드 좌표를 월드 좌표(Vector3)로 변환
         Vector3 worldPos = new Vector3(gridPos.X * cellSize, gridPos.Y * cellSize, 0);
 
-        // 블럭 프리팹 인스턴스화
-        GameObject blockObj = Instantiate(blockPrefab, worldPos, Quaternion.identity, this.transform);
+        // 풀에서 블럭 가져오기 (없으면 생성)
+        GameObject blockObj = PoolManager.Instance.Get(blockPrefab, this.transform);
+        blockObj.transform.localPosition = worldPos;
         blockObj.name = $"Block_{gridPos.X}_{gridPos.Y}";
 
         // 뷰 컴포넌트 초기화 및 리스트 추가
@@ -170,10 +172,10 @@ public class PuzzleBoardView : MonoBehaviour
         {
             _blockViews.Remove(pos);
             
-            // TODO: 파괴 애니메이션(이펙트 등) 후 Destroy 호출
+            // TODO: 파괴 애니메이션(이펙트 등) 후 Pool로 반납
             if (view != null && view.gameObject != null)
             {
-                Destroy(view.gameObject);
+                PoolManager.Instance.Release(view.gameObject);
             }
         }
     }
@@ -202,7 +204,6 @@ public class PuzzleBoardView : MonoBehaviour
     {
         if (_board != null)
         {
-            Debug.Log($"[PuzzleBoardView] Block Input Detected: ({pos.X}, {pos.Y})");
             _board.Input(pos);
         }
     }
@@ -215,12 +216,12 @@ public class PuzzleBoardView : MonoBehaviour
     {
         if (_board == null) return;
 
-        // 기존 블럭 뷰 모두 제거
+        // 기존 블럭 뷰 모두 풀로 반납
         foreach (var view in _blockViews.Values)
         {
             if (view != null && view.gameObject != null)
             {
-                Destroy(view.gameObject);
+                PoolManager.Instance.Release(view.gameObject);
             }
         }
         _blockViews.Clear();

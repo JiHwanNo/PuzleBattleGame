@@ -64,7 +64,6 @@ public class PuzzleCellView : MonoBehaviour
     public void OnClicked()
     {
         string cellType = _cellData != null ? _cellData.CellType.ToString() : "Unknown";
-        Debug.Log($"[PuzzleCellView] 셀 클릭됨! 타입: {cellType}, 위치: ({_gridPos.X}, {_gridPos.Y})");
 
         if (_boardView == null || _cellData == null)
             return;

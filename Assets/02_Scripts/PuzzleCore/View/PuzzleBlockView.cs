@@ -54,6 +54,9 @@ public class PuzzleBlockView : MonoBehaviour
                 address = address,
                 successCallback = (sprite) =>
                 {
+                    // 비동기 로드 도중 블럭이 파괴되었을 수 있으므로 null 체크 필수
+                    if (this == null || _spriteRenderer == null) return;
+
                     _spriteRenderer.sprite = sprite;
 
                     if (_boxCollider != null)
@@ -63,6 +66,7 @@ public class PuzzleBlockView : MonoBehaviour
                 },
                 failedCallback = () =>
                 {
+                    if (this == null) return;
                     Debug.LogWarning($"[PuzzleBlockView] 스프라이트 로드 실패! 주소: {address}");
                 }
             };
