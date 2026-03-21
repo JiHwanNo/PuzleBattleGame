@@ -1,24 +1,38 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
+/// <summary>
+/// 유니티 버튼 컴포넌트를 래핑하여 공통적인 사운드 및 이벤트를 처리하는 UI 클래스입니다.
+/// </summary>
+[RequireComponent(typeof(Button))]
 public class UIButton : MonoBehaviour
 {
-    [SerializeField] MonoBehaviour root;
-    [SerializeField] Button unityButton;
+    /// <summary> 버튼 클릭 시 실행될 추가 이벤트 </summary>
+    public UnityEvent onClick;
 
-    [SerializeField] string callbackName;
-    [SerializeField] string callbackValue;
-    public void OnClickEvent()
+    /// <summary>
+    /// 버튼 컴포넌트의 클릭 리스너를 등록합니다.
+    /// </summary>
+    private void Awake()
     {
-        if (unityButton == null || string.IsNullOrEmpty(callbackName))
+        Button btn = GetComponent<Button>();
+        if (btn != null)
         {
-            Debug.LogError($"UIButton_{gameObject.name}: Unity Button or Callback Name is not set.");
-            return;
+            btn.onClick.AddListener(OnClicked);
         }
+    }
 
-        if (string.IsNullOrEmpty(callbackValue))
-            root.SendMessage(callbackName, callbackValue);
-        else
-            root.SendMessage(callbackName);
+    /// <summary>
+    /// 버튼이 실제 클릭되었을 때 호출되는 내부 메서드입니다.
+    /// </summary>
+    private void OnClicked()
+    {
+        // TODO: 버튼 클릭 공통 사운드 재생 로직 등 추가 가능
+        
+        if (onClick != null)
+        {
+            onClick.Invoke();
+        }
     }
 }

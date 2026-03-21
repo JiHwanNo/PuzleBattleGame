@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Puzzle.Core
@@ -40,6 +41,9 @@ namespace Puzzle.Core
 
         /// <summary> 보드의 세로 높이 </summary>
         int Height { get; }
+
+        /// <summary> 보드 내부 로직에서 발생하는 로그를 외부(View/Controller)로 전달합니다. </summary>
+        Action<string> OnLog { get; set; }
 
         /// <summary> 게임 사양서를 바탕으로 보드를 초기화합니다. </summary>
         void Initialize(GameSpec spec);

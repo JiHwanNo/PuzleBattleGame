@@ -2,12 +2,14 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 게임 오브젝트의 재사용을 관리하는 풀링 매니저 클래스입니다.
+/// 게임 오브젝트의 재사용을 관리하여 성능을 최적화하는 풀링 매니저 클래스입니다.
 /// </summary>
 public class PoolManager : MonoBehaviour
 {
     #region Singleton
     private static PoolManager _instance;
+
+    /// <summary> 전역 접근을 위한 싱글톤 인스턴스 </summary>
     public static PoolManager Instance
     {
         get
@@ -32,12 +34,15 @@ public class PoolManager : MonoBehaviour
     /// <summary>
     /// 특정 프리팹의 인스턴스를 가져옵니다. 풀에 있다면 꺼내오고, 없다면 새로 생성합니다.
     /// </summary>
-    /// <param name="prefab">가져올 프리팹</param>
+    /// <param name="prefab">가져올 프리팹 원본</param>
     /// <param name="parent">부모 Transform</param>
-    /// <returns>활성화된 게임 오브젝트</returns>
+    /// <returns>활성화된 게임 오브젝트 인스턴스</returns>
     public GameObject Get(GameObject prefab, Transform parent = null)
     {
-        if (prefab == null) return null;
+        if (prefab == null)
+        {
+            return null;
+        }
 
         if (!_pools.ContainsKey(prefab))
         {
@@ -48,8 +53,17 @@ public class PoolManager : MonoBehaviour
         if (_pools[prefab].Count > 0)
         {
             instance = _pools[prefab].Dequeue();
-            instance.transform.SetParent(parent);
-            instance.SetActive(true);
+            if (instance != null)
+            {
+                instance.transform.SetParent(parent);
+                instance.SetActive(true);
+            }
+            else
+            {
+                // 풀 내부의 오브젝트가 파괴된 경우 새로 생성
+                instance = Instantiate(prefab, parent);
+                _instanceToPrefab[instance] = prefab;
+            }
         }
         else
         {
@@ -66,7 +80,10 @@ public class PoolManager : MonoBehaviour
     /// <param name="instance">반납할 게임 오브젝트 인스턴스</param>
     public void Release(GameObject instance)
     {
-        if (instance == null) return;
+        if (instance == null)
+        {
+            return;
+        }
 
         if (_instanceToPrefab.TryGetValue(instance, out GameObject prefab))
         {
@@ -89,7 +106,7 @@ public class PoolManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 모든 풀을 비우고 생성된 오브젝트들을 제거합니다.
+    /// 모든 풀을 비우고 생성된 모든 오브젝트들을 제거합니다.
     /// </summary>
     public void Clear()
     {
@@ -97,7 +114,11 @@ public class PoolManager : MonoBehaviour
         {
             while (pool.Count > 0)
             {
-                Destroy(pool.Dequeue());
+                GameObject obj = pool.Dequeue();
+                if (obj != null)
+                {
+                    Destroy(obj);
+                }
             }
         }
         _pools.Clear();

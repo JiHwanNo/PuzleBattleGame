@@ -5,18 +5,22 @@ using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
 
 /// <summary>
-/// Addressables 시스템을 이용해 게임 에셋의 로드 및 인스턴스화를 관리하는 클래스입니다.
+/// Addressables 시스템을 이용해 게임 에셋의 로드 및 인스턴스화를 관리하는 싱글톤 클래스입니다.
 /// </summary>
 public class AssetManager
 {
     #region Singleton
     private static AssetManager _instance;
+
+    /// <summary> 전역 접근을 위한 싱글톤 인스턴스 </summary>
     public static AssetManager Instance
     {
         get
         {
             if (_instance == null)
+            {
                 _instance = new AssetManager();
+            }
             return _instance;
         }
     }
@@ -36,11 +40,11 @@ public class AssetManager
         public Action failedCallback;
     }
 
-    /// <summary> 로드된 에셋들을 캐싱하는 딕셔너리 </summary>
+    /// <summary> 로드된 에셋들을 주소별로 캐싱하는 딕셔너리 </summary>
     private Dictionary<string, object> _addressablePacket = new Dictionary<string, object>();
 
     /// <summary>
-    /// 에셋을 비동기적으로 로드합니다. 이미 캐싱된 경우 즉시 콜백을 호출합니다.
+    /// 에셋을 비동기적으로 로드합니다. 이미 캐싱된 경우 즉시 성공 콜백을 호출합니다.
     /// </summary>
     /// <typeparam name="T">에셋 타입</typeparam>
     /// <param name="args">로드 설정 인자</param>
@@ -58,12 +62,14 @@ public class AssetManager
             return;
         }
 
-        Addressables.LoadAssetAsync<T>(args.address).Completed += op =>
+        Addressables.LoadAssetAsync<T>(args.address).Completed += (op) =>
         {
             if (op.Status == AsyncOperationStatus.Succeeded)
             {
                 if (!_addressablePacket.ContainsKey(args.address))
+                {
                     _addressablePacket.Add(args.address, op.Result);
+                }
 
                 args.successCallback?.Invoke(op.Result);
             }
@@ -76,7 +82,7 @@ public class AssetManager
     }
 
     /// <summary>
-    /// 프리팹 에셋을 비동기적으로 로드하고 실제 게임 오브젝트로 생성합니다.
+    /// 프리팹 에셋을 비동기적으로 로드하고 실제 게임 오브젝트로 생성(Instantiate)합니다.
     /// </summary>
     /// <param name="args">로드 설정 인자</param>
     /// <param name="parent">생성될 오브젝트의 부모 Transform</param>
@@ -108,17 +114,26 @@ public class AssetManager
     }
 
     /// <summary>
-    /// 에셋을 동기적으로 로드합니다. (Wait Until Completion)
+    /// 에셋을 동기적으로 로드합니다. (WaitForCompletion 사용)
     /// </summary>
     /// <typeparam name="T">에셋 타입</typeparam>
     /// <param name="address">에셋 주소</param>
-    /// <returns>로드된 에셋</returns>
+    /// <returns>로드된 에셋 혹은 null</returns>
     internal T LoadAsset<T>(string address)
     {
+        if (string.IsNullOrEmpty(address))
+        {
+            return default;
+        }
+
         if (_addressablePacket.TryGetValue(address, out object reObj))
+        {
             return (T)reObj;
+        }
         
-        object newObj = Addressables.LoadAssetAsync<T>(address).WaitForCompletion();
+        var op = Addressables.LoadAssetAsync<T>(address);
+        object newObj = op.WaitForCompletion();
+
         if (newObj != null && !_addressablePacket.ContainsKey(address))
         {
             _addressablePacket.Add(address, newObj);
@@ -127,7 +142,7 @@ public class AssetManager
     }
 
     /// <summary>
-    /// 프리팹을 동기적으로 로드하고 생성합니다.
+    /// 프리팹을 동기적으로 로드하고 인스턴스를 생성합니다.
     /// </summary>
     /// <param name="address">에셋 주소</param>
     /// <param name="parent">부모 Transform</param>
