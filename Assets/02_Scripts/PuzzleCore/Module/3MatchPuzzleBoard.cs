@@ -9,6 +9,9 @@ namespace Puzzle.Core
     /// </summary>
     public class ThreeMatchPuzzleBoard : IPuzzleBoard
     {
+        /// <summary> 보드의 현재 논리적 상태 </summary>
+        public BoardState State { get; private set; } = BoardState.Waiting;
+
         /// <summary> 게임 내 공용 난수 생성기 </summary>
         public PuzzleRandom Random { get; private set; }
 
@@ -30,8 +33,8 @@ namespace Puzzle.Core
         /// <summary> 게임 시작 후 누적된 프레임 수 </summary>
         private ulong _frameCount;
 
-        /// <summary> 현재 보드가 로직 처리 중인지 여부 </summary>
-        private bool _isProcessing;
+        /// <summary> 현재 보드가 로직 처리 중인지 여부 (State가 Waiting이 아님을 의미) </summary>
+        private bool _isProcessing => State != BoardState.Waiting;
 
         /// <summary> 첫 번째로 클릭되어 선택된 셀의 좌표 </summary>
         private GridPos? _selectedPos = null;
@@ -49,9 +52,9 @@ namespace Puzzle.Core
             Cells = new Dictionary<GridPos, PuzzleCell>();
             _views = new List<BoardViewAction>();
             _frameCount = 0;
-            _isProcessing = false;
             _selectedPos = null;
             gameSpec = spec;
+            State = BoardState.Waiting;
 
             // 난수 생성기 초기화 (임시 시드 0 사용, 추후 GameSpec 등에서 주입 가능)
             Random = new PuzzleRandom(0);
@@ -97,7 +100,11 @@ namespace Puzzle.Core
         /// <param name="input">입력된 타일의 그리드 좌표</param>
         public void Input(GridPos input)
         {
-            _inputQueue.Enqueue(input);
+            // 입력 대기 상태일 때만 입력을 받음
+            if (State == BoardState.Waiting)
+            {
+                _inputQueue.Enqueue(input);
+            }
         }
 
         /// <summary>
@@ -106,6 +113,8 @@ namespace Puzzle.Core
         /// <returns>하나 이상의 입력이 처리되었다면 true를 반환합니다.</returns>
         public bool InputEnd()
         {
+            if (State != BoardState.Waiting) return false;
+
             bool processed = false;
             while (_inputQueue.Count > 0)
             {
@@ -117,21 +126,77 @@ namespace Puzzle.Core
         }
 
         /// <summary>
-        /// 매 프레임마다 보드의 상태를 업데이트합니다. (예: 블럭 낙하 연산 등)
+        /// 매 프레임마다 보드의 상태를 업데이트합니다.
+        /// 상태 머신(State Machine)에 따라 매칭, 낙하, 보충 등의 로직을 순차적으로 수행합니다.
         /// </summary>
         public void Update()
         {
             _frameCount++;
 
-            // 매 프레임마다 생성기(Generator) 체크 및 블럭 보충
-            ProcessGenerators();
+            switch (State)
+            {
+                case BoardState.Waiting:
+                    // 입력 대기 중 (별도 로직 없음)
+                    break;
+
+                case BoardState.Matching:
+                    if (ProcessMatching())
+                    {
+                        // 매칭된 게 있다면 낙하 상태로 전환
+                        State = BoardState.Falling;
+                    }
+                    else
+                    {
+                        // 더 이상 매칭될 게 없다면 입력 대기 상태로 복귀
+                        State = BoardState.Waiting;
+                    }
+                    break;
+
+                case BoardState.Falling:
+                    if (ProcessFalling())
+                    {
+                        // 모든 블럭이 낙하 완료되었다면 보충 상태로 전환
+                        State = BoardState.Filling;
+                    }
+                    break;
+
+                case BoardState.Filling:
+                    if (ProcessFilling())
+                    {
+                        // 모든 빈 공간이 보충되었다면 다시 매칭 판정 (콤보 체크)
+                        State = BoardState.Matching;
+                    }
+                    break;
+            }
         }
 
         /// <summary>
-        /// 생성기(Generator) 타입의 셀들을 검사하여, 블럭이 비어있다면 새 블럭을 생성합니다.
+        /// 보드 전체의 매칭 여부를 검사하고 파괴 처리합니다.
         /// </summary>
-        private void ProcessGenerators()
+        /// <returns>매칭이 발생했다면 true</returns>
+        private bool ProcessMatching()
         {
+            // TODO: 실제 3매치 십자 탐색 로직 구현 (현재는 임시로 false)
+            return false;
+        }
+
+        /// <summary>
+        /// 빈 공간으로 블럭들을 떨어뜨리는 로직을 수행합니다.
+        /// </summary>
+        /// <returns>낙하 로직이 완료(안정화)되었다면 true</returns>
+        private bool ProcessFalling()
+        {
+            // TODO: 블럭 낙하(Gravity) 로직 구현
+            return true; 
+        }
+
+        /// <summary>
+        /// 생성기(Generator)를 통해 빈 공간에 새 블럭을 보충합니다.
+        /// </summary>
+        /// <returns>보충이 완료되었다면 true</returns>
+        private bool ProcessFilling()
+        {
+            bool anyFilled = false;
             foreach (var cell in Cells.Values)
             {
                 if (cell.CellType == CellType.Generator && cell.Block == null)
@@ -140,28 +205,25 @@ namespace Puzzle.Core
                     if (newBlock != null)
                     {
                         cell.Block = newBlock;
-                        UnityEngine.Debug.Log($"[ThreeMatchBoard] 생성기에서 블럭 생성됨: {cell.Position}, ID: {newBlock.GetBlockId()}");
-                        
-                        // 시각적 연출 추가
                         AddView(new BoardViewAction { type = ViewType.Create, frame = (uint)_frameCount });
+                        anyFilled = true;
                     }
                 }
             }
+            return true; // 현재는 즉시 보충되므로 항상 true 반환
         }
 
         /// <summary>
         /// 보드의 로직 처리를 일시 정지하거나 재개합니다.
         /// </summary>
-        /// <param name="pause">true일 경우 정지, false일 경우 재개</param>
         public void Pause(bool pause)
         {
-            _isProcessing = pause;
+            // 일시 정지 기능은 상태 머신 확장 시 추가 구현 가능
         }
 
         /// <summary>
-        /// 특정 좌표에 대한 입력을 실제로 처리하는 내부 로직입니다. (다중 입력 방식 지원)
+        /// 특정 좌표에 대한 입력을 실제로 처리하는 내부 로직입니다.
         /// </summary>
-        /// <param name="input">처리할 타일의 그리드 좌표</param>
         private void ProcessInput(GridPos input)
         {
             try
@@ -172,18 +234,19 @@ namespace Puzzle.Core
 
                 var block = inputCell.Block;
 
-                // 1. 만약 첫 번째 클릭인데, 터치(클릭) 능력이 있는 블럭이면 즉시 발동
+                // 1. 터치(클릭) 능력이 있는 블럭 즉시 발동
                 if (_selectedPos == null && block is ITouchableBlock touchable)
                 {
                     touchable.OnTouched(this, input);
-                    return; // 스왑 처리 없이 여기서 종료
+                    State = BoardState.Matching; // 상태 변화 유발
+                    return;
                 }
 
-                // 2. 터치 전용이 아니면 스왑 대기열(선택 상태)로 만듦
+                // 2. 선택 상태 처리
                 if (_selectedPos == null)
                 {
                     _selectedPos = input;
-                    UnityEngine.Debug.Log($"[ThreeMatchBoard] 첫 번째 블럭 선택됨: {input.X}, {input.Y}");
+                    UnityEngine.Debug.Log($"[ThreeMatchBoard] 첫 번째 블럭 선택됨: {input}");
                     return;
                 }
 
@@ -192,59 +255,33 @@ namespace Puzzle.Core
                 GridPos secondPos = input;
                 _selectedPos = null;
 
-                if (firstPos == secondPos)
-                {
-                    UnityEngine.Debug.Log("[ThreeMatchBoard] 같은 블럭 클릭 취소");
-                    return;
-                }
+                if (firstPos == secondPos) return;
 
-                var firstCell = GetCell(firstPos);
-                var firstBlock = firstCell?.Block;
+                var firstBlock = GetCell(firstPos)?.Block;
 
                 if (firstBlock != null && IsAdjacent(firstPos, secondPos) && firstBlock is ISwappableBlock swappable)
                 {
-                    UnityEngine.Debug.Log($"[ThreeMatchBoard] 인접 블럭 스왑 시도: {firstPos} <-> {secondPos}");
-                    
-                    // 물리적 자리 교환 (임시 스왑 로직)
                     SwapBlocks(firstPos, secondPos);
-                    
-                    // 블럭 내부의 스왑 로직(폭발, 매치 확인 등) 실행
                     bool success = swappable.OnSwapped(this, firstPos, secondPos);
                     
                     if (success)
                     {
-                        // 임시: 3매치 룰에서 일반 블럭의 경우 보드단에서 매치 체크가 필요함
-                        var targetBlock = GetCell(secondPos).Block;
-                        if (targetBlock != null && firstBlock.GetBlockId() == targetBlock.GetBlockId())
-                        {
-                            UnityEngine.Debug.Log($"[ThreeMatchBoard] 매칭 성공! 동일 블럭 ID: {firstBlock.GetBlockId()}");
-                            GetCell(firstPos).Block = null;
-                            GetCell(secondPos).Block = null;
-                            AddView(new BoardViewAction { type = ViewType.Destroy, frame = 0 });
-                        }
-                        else
-                        {
-                            // 매치 실패 시 다시 되돌림
-                            UnityEngine.Debug.Log("[ThreeMatchBoard] 매칭 실패. 스왑 취소 및 원상복구.");
-                            SwapBlocks(firstPos, secondPos);
-                        }
+                        // 스왑 후 매칭 여부 판정으로 상태 전환
+                        State = BoardState.Matching;
                     }
                     else
                     {
-                        // 블럭 자체에서 스왑을 거부한 경우 (원상복구)
-                        SwapBlocks(firstPos, secondPos);
+                        SwapBlocks(firstPos, secondPos); // 원상복구
                     }
                 }
                 else
                 {
-                    // 인접하지 않은 곳을 클릭했으면 해당 블럭을 새로 선택
-                    _selectedPos = input;
-                    UnityEngine.Debug.Log($"[ThreeMatchBoard] 인접하지 않음. 새로운 블럭 선택됨: {input.X}, {input.Y}");
+                    _selectedPos = input; // 인접하지 않으면 새로운 선택으로 변경
                 }
             }
-            finally
+            catch (System.Exception e)
             {
-                _isProcessing = false;
+                UnityEngine.Debug.LogError($"[ThreeMatchBoard] 입력 처리 중 오류: {e.Message}");
             }
         }
 

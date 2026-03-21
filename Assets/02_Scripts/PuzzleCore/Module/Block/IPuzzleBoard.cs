@@ -19,6 +19,9 @@ namespace Puzzle.Core
     /// </summary>
     public interface IPuzzleBoard
     {
+        /// <summary> 보드의 현재 논리적 상태 </summary>
+        BoardState State { get; }
+
         /// <summary> 게임 내 공용 난수 생성기 </summary>
         PuzzleRandom Random { get; }
 

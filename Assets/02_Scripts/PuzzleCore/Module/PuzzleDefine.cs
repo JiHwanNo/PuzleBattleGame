@@ -166,6 +166,16 @@ namespace Puzzle.Core
         None = 0, Up, Down, Left, Right, UpLeft, UpRight, DownLeft, DownRight
     }
 
+    /// <summary> 보드의 논리적 처리 상태 </summary>
+    public enum BoardState
+    {
+        Waiting = 0,                // 입력 대기 (유저 조작 가능)
+        Matching = 1,               // 매칭 판정 및 파괴 처리 중
+        Falling = 2,                // 빈 공간으로 블럭 낙하 중
+        Filling = 3,                // 생성기에서 새 블럭 보충 중
+        Finish = 4,                 // 스테이지 종료/클리어 처리
+    }
+
     /// <summary> 시각적 연출의 종류 </summary>
     public enum ViewType
     {
