@@ -12,14 +12,6 @@ public class PuzzleBlockCollider : MonoBehaviour
     BoxCollider2D _boxCollider2D;
 
     /// <summary>
-    /// 마우스 또는 터치로 BoxCollider2D 영역이 클릭되었을 때 유니티에서 자동 호출됩니다.
-    /// </summary>
-    private void OnMouseDown()
-    {
-        OnClickBlock();
-    }
-
-    /// <summary>
     /// 뷰 쪽에 클릭 이벤트를 전달합니다.
     /// </summary>
     internal void OnClickBlock()
