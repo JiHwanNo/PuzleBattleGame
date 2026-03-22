@@ -319,13 +319,13 @@ public class PuzzleBoardView : MonoBehaviour
         {
             List<BoardViewAction> actionGroup = _actionQueue.Dequeue();
             
-            var moveActions = actionGroup.Where(a => a.type == ViewType.Move).ToList();
-            if (moveActions.Count > 0)
+            var movementActions = actionGroup.Where(a => a.type == ViewType.Move || a.type == ViewType.Fall || a.type == ViewType.CreateAndFall).ToList();
+            if (movementActions.Count > 0)
             {
-                yield return StartCoroutine(ExecuteBatchMove(moveActions));
+                yield return StartCoroutine(ExecuteBatchMovement(movementActions));
             }
 
-            var otherActions = actionGroup.Where(a => a.type != ViewType.Move).ToList();
+            var otherActions = actionGroup.Where(a => a.type != ViewType.Move && a.type != ViewType.Fall && a.type != ViewType.CreateAndFall).ToList();
             if (otherActions.Count > 0)
             {
                 int completedCount = 0;
@@ -348,21 +348,57 @@ public class PuzzleBoardView : MonoBehaviour
         _isAnimating = false;
     }
 
-    private System.Collections.IEnumerator ExecuteBatchMove(List<BoardViewAction> moveActions)
+    private System.Collections.IEnumerator ExecuteBatchMovement(List<BoardViewAction> moveActions)
     {
         int completedCount = 0;
         int totalCount = moveActions.Count;
 
+        // 1. 기존 뷰 이동 처리를 위한 캐싱 및 딕셔너리에서 제거
         Dictionary<GridPos, PuzzleBlockView> movingViews = new Dictionary<GridPos, PuzzleBlockView>();
         foreach (var action in moveActions)
         {
-            if (_blockViews.TryGetValue(action.position, out PuzzleBlockView view))
+            if (action.type == ViewType.Move || action.type == ViewType.Fall)
             {
-                movingViews[action.position] = view;
-                _blockViews.Remove(action.position);
+                if (_blockViews.TryGetValue(action.position, out PuzzleBlockView view))
+                {
+                    movingViews[action.position] = view;
+                    _blockViews.Remove(action.position);
+                }
+            }
+            else if (action.type == ViewType.CreateAndFall)
+            {
+                // CreateAndFall은 화면에 없는 상태에서 시작하므로 블럭을 먼저 생성합니다.
+                if (_blockPrefabObj != null && action.blockData != null)
+                {
+                    if (_blockViews.ContainsKey(action.targetPosition))
+                    {
+                        HandleImmediateDestroy(action.targetPosition);
+                    }
+
+                    GameObject blockObj = PoolManager.Instance.Get(_blockPrefabObj, blockRoot);
+                    blockObj.transform.localPosition = GetLocalPos(action.position);
+                    blockObj.name = $"Block_{action.targetPosition.X}_{action.targetPosition.Y}";
+
+                    PuzzleBlockView bView = blockObj.GetComponent<PuzzleBlockView>();
+                    if (bView != null)
+                    {
+                        bView.Initialize(action.blockData, action.targetPosition, this);
+                        // 새로 생성된 뷰를 movingViews에 넣어서 애니메이션이 처리되도록 합니다.
+                        movingViews[action.position] = bView;
+                    }
+                    else
+                    {
+                        completedCount++; // 에러 방어
+                    }
+                }
+                else
+                {
+                    completedCount++;
+                }
             }
         }
 
+        // 2. 새로운 위치를 딕셔너리에 등록하고 애니메이션 시작
         foreach (var action in moveActions)
         {
             if (movingViews.TryGetValue(action.position, out PuzzleBlockView view))
@@ -371,11 +407,21 @@ public class PuzzleBoardView : MonoBehaviour
                 _blockViews[to] = view;
 
                 Vector3 targetPos = GetLocalPos(to);
-                view.PlayMoveAnimation(targetPos, () => 
+                
+                System.Action onComplete = () => 
                 {
                     view.Initialize(view.GetBlockData(), to, this);
                     completedCount++;
-                });
+                };
+
+                if (action.type == ViewType.Move)
+                {
+                    view.PlayMoveAnimation(targetPos, onComplete);
+                }
+                else // Fall or CreateAndFall
+                {
+                    view.PlayFallAnimation(targetPos, onComplete);
+                }
             }
             else
             {

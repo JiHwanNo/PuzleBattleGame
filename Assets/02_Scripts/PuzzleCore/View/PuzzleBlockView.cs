@@ -154,6 +154,15 @@ public class PuzzleBlockView : MonoBehaviour
     }
 
     /// <summary>
+    /// 지정된 좌표로 낙하하는 애니메이션을 수행합니다.
+    /// </summary>
+    public void PlayFallAnimation(Vector3 targetLocalPos, Action onComplete)
+    {
+        float duration = 0.2f; // 거리와 무관하게 동일한 시간으로 떨어지게 하거나 거리 비례로 할 수 있습니다.
+        transform.DOLocalMove(targetLocalPos, duration).SetEase(Ease.OutQuad).OnComplete(() => onComplete?.Invoke());
+    }
+
+    /// <summary>
     /// 블럭이 파괴될 때의 시각적 연출을 수행합니다.
     /// </summary>
     public void PlayDestroyAnimation(Action onComplete)

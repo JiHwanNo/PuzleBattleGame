@@ -278,7 +278,11 @@ namespace Puzzle.Core
         /// <summary> 이동 연출 </summary>
         Move,
         /// <summary> 착지 연출 </summary>
-        Land
+        Land,
+        /// <summary> 낙하 연출 </summary>
+        Fall,
+        /// <summary> 생성 및 낙하 연출 </summary>
+        CreateAndFall
     }
 
     /// <summary> 개별 블럭의 논리적 상태 </summary>
