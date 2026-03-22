@@ -54,6 +54,15 @@ public class PuzzleBoardView : MonoBehaviour
     /// <summary> 화면에 생성된 블럭 뷰들을 좌표별로 관리하는 딕셔너리 </summary>
     private Dictionary<GridPos, PuzzleBlockView> _blockViews = new Dictionary<GridPos, PuzzleBlockView>();
 
+    /// <summary> 보드 연출 액션 그룹 대기열 (프레임 단위로 그룹화됨) </summary>
+    private Queue<List<BoardViewAction>> _actionQueue = new Queue<List<BoardViewAction>>();
+
+    /// <summary> 현재 연출이 진행 중인지 여부 </summary>
+    private bool _isAnimating = false;
+
+    /// <summary> 현재 보드가 애니메이션 연출 중인지 여부를 반환합니다. </summary>
+    public bool IsAnimating => _isAnimating;
+
 #if UNITY_EDITOR
     /// <summary>
     /// 유니티 에디터의 씬 뷰에서 그리드 좌표와 블럭 정보를 텍스트로 표시합니다.
@@ -153,14 +162,9 @@ public class PuzzleBoardView : MonoBehaviour
             }
         }
 
-        // --- 보드 생성 완료 후 중앙 정렬 및 카메라 줌 조절 ---
         AlignBoardToCenter();
     }
 
-    /// <summary>
-    /// 그리드 좌표를 보드 중심 기준의 로컬 월드 좌표로 변환합니다.
-    /// 보드 자체는 (0,0)에 있고, 내부 셀들이 오프셋 배치됩니다.
-    /// </summary>
     public Vector3 GetLocalPos(GridPos pos)
     {
         if (_board == null)
@@ -168,7 +172,6 @@ public class PuzzleBoardView : MonoBehaviour
             return Vector3.zero;
         }
 
-        // 보드 중심을 (0,0)으로 만들기 위한 오프셋 계산
         float offsetX = (_board.Width - 1) * cellSize / 2f;
         float offsetY = (_board.Height - 1) * cellSize / 2f;
 
@@ -182,7 +185,6 @@ public class PuzzleBoardView : MonoBehaviour
             return;
         }
 
-        // 1. 카메라 줌(Orthographic Size) 먼저 결정 (여백 포함)
         float totalRequiredWidth = (_board.Width * cellSize) + (padding * 2f);
         float totalRequiredHeight = (_board.Height * cellSize) + (padding * 2f);
 
@@ -193,26 +195,18 @@ public class PuzzleBoardView : MonoBehaviour
             float sizeByWidth = (totalRequiredWidth / 2f) / screenAspect;
 
             Camera.main.orthographicSize = Mathf.Max(sizeByHeight, sizeByWidth);
-            
-            // 카메라 위치 고정 (0,0)
             Camera.main.transform.position = new Vector3(0, 0, -10f);
         }
 
-        // 2. 수직 정렬 오프셋 계산
         float finalY = 0f;
         if (Camera.main != null)
         {
             float camHeightHalf = Camera.main.orthographicSize;
             float boardHeightHalf = (_board.Height * cellSize) / 2f;
-            
-            // 화면 끝에서 보드 끝까지의 여유 공간 (단방향)
             float availableSpace = camHeightHalf - boardHeightHalf - padding;
-            
-            // offsetY 비율에 따라 실제 Y 위치 결정 (0.5면 위로 바짝, -0.5면 아래로 바짝)
             finalY = offsetY * 2f * availableSpace;
         }
 
-        // 3. 보드 컨테이너 위치 설정 (X는 0 고정, Y는 계산된 오프셋 적용)
         transform.localPosition = new Vector3(0, finalY, 0);
     }
 
@@ -236,6 +230,8 @@ public class PuzzleBoardView : MonoBehaviour
 
         _cellViews.Clear();
         _blockViews.Clear();
+        _actionQueue.Clear();
+        _isAnimating = false;
     }
 
     private void CreateCellView(GridPos gridPos, PuzzleCell cellData)
@@ -285,7 +281,6 @@ public class PuzzleBoardView : MonoBehaviour
             return;
         }
 
-        // --- 매 프레임 블럭 상태 시각적 동기화 ---
         foreach (var kvp in _blockViews)
         {
             if (kvp.Value != null)
@@ -297,61 +292,162 @@ public class PuzzleBoardView : MonoBehaviour
         List<BoardViewAction> actions = _board.FetchActions();
         if (actions != null && actions.Count > 0)
         {
-            var moveActions = actions.Where(a => a.type == ViewType.Move).ToList();
-            var otherActions = actions.Where(a => a.type != ViewType.Move).ToList();
-
-            if (moveActions.Count > 0)
+            // 프레임 우선, 프레임이 같다면 orderIndex가 작은 순서대로 개별 그룹화하여 큐에 추가
+            foreach (var action in actions.OrderBy(a => a.frame).ThenBy(a => a.orderIndex))
             {
-                HandleBatchMove(moveActions);
+                _actionQueue.Enqueue(new List<BoardViewAction> { action });
             }
+        }
 
-            foreach (var action in otherActions)
-            {
-                ProcessViewAction(action);
-            }
+        if (!_isAnimating && _actionQueue.Count > 0)
+        {
+            StartCoroutine(ProcessActionQueue());
         }
     }
 
-    private void HandleBatchMove(List<BoardViewAction> moveActions)
+    private System.Collections.IEnumerator ProcessActionQueue()
     {
-        Dictionary<GridPos, PuzzleBlockView> tempMovingViews = new Dictionary<GridPos, PuzzleBlockView>();
-        
+        _isAnimating = true;
+
+        while (_actionQueue.Count > 0)
+        {
+            List<BoardViewAction> actionGroup = _actionQueue.Dequeue();
+            
+            var moveActions = actionGroup.Where(a => a.type == ViewType.Move).ToList();
+            if (moveActions.Count > 0)
+            {
+                yield return StartCoroutine(ExecuteBatchMove(moveActions));
+            }
+
+            var otherActions = actionGroup.Where(a => a.type != ViewType.Move).ToList();
+            if (otherActions.Count > 0)
+            {
+                int completedCount = 0;
+                int totalCount = otherActions.Count;
+
+                foreach (var action in otherActions)
+                {
+                    ExecuteSingleAction(action, () => completedCount++);
+                }
+
+                while (completedCount < totalCount)
+                {
+                    yield return null;
+                }
+            }
+
+            yield return new WaitForSeconds(0.05f);
+        }
+
+        _isAnimating = false;
+    }
+
+    private System.Collections.IEnumerator ExecuteBatchMove(List<BoardViewAction> moveActions)
+    {
+        int completedCount = 0;
+        int totalCount = moveActions.Count;
+
+        Dictionary<GridPos, PuzzleBlockView> movingViews = new Dictionary<GridPos, PuzzleBlockView>();
         foreach (var action in moveActions)
         {
             if (_blockViews.TryGetValue(action.position, out PuzzleBlockView view))
             {
-                tempMovingViews[action.position] = view;
+                movingViews[action.position] = view;
                 _blockViews.Remove(action.position);
             }
         }
 
         foreach (var action in moveActions)
         {
-            if (tempMovingViews.TryGetValue(action.position, out PuzzleBlockView view))
+            if (movingViews.TryGetValue(action.position, out PuzzleBlockView view))
             {
                 GridPos to = action.targetPosition;
                 _blockViews[to] = view;
 
-                view.transform.localPosition = GetLocalPos(to);
-                view.Initialize(view.GetBlockData(), to, this);
+                Vector3 targetPos = GetLocalPos(to);
+                view.PlayMoveAnimation(targetPos, () => 
+                {
+                    view.Initialize(view.GetBlockData(), to, this);
+                    completedCount++;
+                });
             }
+            else
+            {
+                completedCount++;
+            }
+        }
+
+        while (completedCount < totalCount)
+        {
+            yield return null;
         }
     }
 
-    private void ProcessViewAction(BoardViewAction action)
+    private void ExecuteSingleAction(BoardViewAction action, System.Action onComplete)
     {
         switch (action.type)
         {
             case ViewType.Destroy:
-                HandleDestroyAction(action.position);
+                if (_blockViews.TryGetValue(action.position, out PuzzleBlockView dView))
+                {
+                    _blockViews.Remove(action.position);
+                    dView.PlayDestroyAnimation(() => 
+                    {
+                        PoolManager.Instance.Release(dView.gameObject);
+                        onComplete?.Invoke();
+                    });
+                }
+                else
+                {
+                    onComplete?.Invoke();
+                }
                 break;
+
             case ViewType.Create:
-                HandleCreateAction(action.position);
+                PuzzleCell cell = _board.GetCell(action.position);
+                if (cell != null && cell.Block != null)
+                {
+                    if (_blockViews.ContainsKey(action.position))
+                    {
+                        HandleImmediateDestroy(action.position);
+                    }
+
+                    if (_blockPrefabObj != null)
+                    {
+                        GameObject blockObj = PoolManager.Instance.Get(_blockPrefabObj, blockRoot);
+                        blockObj.transform.localPosition = GetLocalPos(action.position);
+                        blockObj.name = $"Block_{action.position.X}_{action.position.Y}";
+
+                        PuzzleBlockView bView = blockObj.GetComponent<PuzzleBlockView>();
+                        if (bView != null)
+                        {
+                            bView.Initialize(cell.Block, action.position, this);
+                            _blockViews.Add(action.position, bView);
+                            bView.PlayCreateAnimation(onComplete);
+                        }
+                        else
+                        {
+                            onComplete?.Invoke();
+                        }
+                    }
+                    else
+                    {
+                        onComplete?.Invoke();
+                    }
+                }
+                else
+                {
+                    onComplete?.Invoke();
+                }
+                break;
+
+            default:
+                onComplete?.Invoke();
                 break;
         }
     }
 
-    private void HandleDestroyAction(GridPos pos)
+    private void HandleImmediateDestroy(GridPos pos)
     {
         if (_blockViews.TryGetValue(pos, out PuzzleBlockView view))
         {
@@ -360,19 +456,6 @@ public class PuzzleBoardView : MonoBehaviour
             {
                 PoolManager.Instance.Release(view.gameObject);
             }
-        }
-    }
-
-    private void HandleCreateAction(GridPos pos)
-    {
-        PuzzleCell cell = _board.GetCell(pos);
-        if (cell != null && cell.Block != null)
-        {
-            if (_blockViews.ContainsKey(pos))
-            {
-                HandleDestroyAction(pos);
-            }
-            CreateBlockView(pos, cell.Block);
         }
     }
 

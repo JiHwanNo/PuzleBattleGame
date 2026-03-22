@@ -46,11 +46,14 @@ namespace Puzzle.Core
         /// <summary> 지금까지의 모든 유저 조작 기록 </summary>
         private List<InputRecord> _recordedInputs = new List<InputRecord>();
 
-        /// <summary> 현재 보드 프레임 번호 </summary>
+        /// <summary> 현재 보드 프레임 번호 (리플레이용) </summary>
         private ulong _frameCount;
 
         /// <summary> 현재 보드에 적용된 게임 사양서 </summary>
         internal GameSpec gameSpec;
+
+        /// <summary> 연출의 시각적 순서를 정하는 인덱스 (프레임과 무관하게 증가) </summary>
+        private uint _currentOrderIndex = 0;
 
         /// <summary>
         /// 보드 내부 로직을 수행하며 로그를 전달합니다.
@@ -72,6 +75,7 @@ namespace Puzzle.Core
             _views = new List<BoardViewAction>();
             _recordedInputs = new List<InputRecord>();
             _frameCount = 0;
+            _currentOrderIndex = 0;
             gameSpec = spec;
             Random = new PuzzleRandom(0);
             Objective = new ObjectiveManager(gameSpec?.rule.objectives);
@@ -204,7 +208,7 @@ namespace Puzzle.Core
                 return;
             }
 
-            // 1. 물리적 스왑 (상태 변경)
+            // 1. 물리적 스왑
             cellA.Block.SetState(BlockState.Moving);
             cellB.Block.SetState(BlockState.Moving);
             SwapBlocks(first, second);
@@ -259,6 +263,8 @@ namespace Puzzle.Core
                     else
                     {
                         State = BoardState.Waiting;
+                        _currentOrderIndex = 0; // 보드가 대기 상태가 되면 연출 순서 초기화
+                        
                         // 안정화 시 모든 블럭 상태 Idle로
                         foreach (var cell in Cells.Values)
                         {
@@ -451,8 +457,24 @@ namespace Puzzle.Core
 
         public void Pause(bool pause) { }
         public List<InputRecord> GetRecordedInputs() => new List<InputRecord>(_recordedInputs);
-        public List<BoardViewAction> FetchActions() { var res = _views.OrderBy(v => v.frame).ToList(); _views.Clear(); return res; }
-        public void AddView(BoardViewAction view) => _views.Add(view);
+        
+        public List<BoardViewAction> FetchActions() 
+        { 
+            // 프레임 우선, 프레임이 같다면 orderIndex가 작은 순서대로 정렬하여 반환
+            var res = _views.OrderBy(v => v.frame).ThenBy(v => v.orderIndex).ToList(); 
+            _views.Clear(); 
+            return res; 
+        }
+        
+        /// <summary>
+        /// 화면 연출용 액션을 추가합니다. 추가될 때마다 orderIndex가 자동으로 증가하여 순차적 연출을 보장합니다.
+        /// </summary>
+        public void AddView(BoardViewAction view) 
+        {
+            view.orderIndex = _currentOrderIndex++;
+            _views.Add(view);
+        }
+
         public PuzzleCell GetCell(GridPos pos) => Cells.TryGetValue(pos, out var c) ? c : null;
         private bool IsAdjacent(GridPos a, GridPos b) => (Math.Abs(a.X - b.X) == 1 && a.Y == b.Y) || (Math.Abs(a.Y - b.Y) == 1 && a.X == b.X);
 

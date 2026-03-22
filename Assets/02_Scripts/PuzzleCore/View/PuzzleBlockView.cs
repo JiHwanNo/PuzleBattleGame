@@ -1,5 +1,7 @@
 using Puzzle.Core;
 using UnityEngine;
+using DG.Tweening;
+using System;
 
 /// <summary>
 /// 개별 퍼즐 블럭의 시각적 표현과 애니메이션을 담당하는 클래스입니다.
@@ -119,30 +121,53 @@ public class PuzzleBlockView : MonoBehaviour
         switch (_blockData.State)
         {
             case BlockState.Selected:
-                // 선택 시 노란색 강조 및 약간 커짐
+                // 선택 시 노란색 강조
                 _spriteRenderer.color = Color.yellow;
-                transform.localScale = Vector3.one * 1.1f;
                 break;
 
             case BlockState.Matched:
                 // 매칭 시 반투명하게 표시
                 _spriteRenderer.color = new Color(1.0f, 1.0f, 1.0f, 0.5f);
-                transform.localScale = Vector3.one;
-                break;
-
-            case BlockState.Moving:
-            case BlockState.Falling:
-                // 이동/낙하 중에는 기본 상태 유지
-                _spriteRenderer.color = Color.white;
-                transform.localScale = Vector3.one;
                 break;
 
             default:
-                // 기본 상태 (Idle 등)
+                // 기본 상태
                 _spriteRenderer.color = Color.white;
-                transform.localScale = Vector3.one;
                 break;
         }
+    }
+
+    /// <summary>
+    /// 블럭이 클릭되었을 때의 시각적 연출을 수행합니다.
+    /// </summary>
+    public void PlayClickAnimation(Action onComplete)
+    {
+        transform.DOScale(1.1f, 0.1f).SetLoops(2, LoopType.Yoyo).OnComplete(() => onComplete?.Invoke());
+    }
+
+    /// <summary>
+    /// 지정된 좌표로 부드럽게 이동하는 애니메이션을 수행합니다.
+    /// </summary>
+    public void PlayMoveAnimation(Vector3 targetLocalPos, Action onComplete)
+    {
+        transform.DOLocalMove(targetLocalPos, 0.2f).SetEase(Ease.OutBack).OnComplete(() => onComplete?.Invoke());
+    }
+
+    /// <summary>
+    /// 블럭이 파괴될 때의 시각적 연출을 수행합니다.
+    /// </summary>
+    public void PlayDestroyAnimation(Action onComplete)
+    {
+        transform.DOScale(0f, 0.2f).SetEase(Ease.InBack).OnComplete(() => onComplete?.Invoke());
+    }
+
+    /// <summary>
+    /// 블럭이 생성될 때의 시각적 연출을 수행합니다.
+    /// </summary>
+    public void PlayCreateAnimation(Action onComplete)
+    {
+        transform.localScale = Vector3.zero;
+        transform.DOScale(1.0f, 0.2f).SetEase(Ease.OutBack).OnComplete(() => onComplete?.Invoke());
     }
 
     /// <summary>
@@ -159,9 +184,19 @@ public class PuzzleBlockView : MonoBehaviour
     /// </summary>
     public void OnClicked()
     {
-        if (_boardView != null)
+        // 연출 중이면 입력 무시
+        if (_boardView != null && _boardView.IsAnimating)
         {
-            _boardView.OnBlockInput(_gridPos);
+            return;
         }
+
+        // 클릭 애니메이션 재생 후 로직 전달
+        PlayClickAnimation(() =>
+        {
+            if (_boardView != null)
+            {
+                _boardView.OnBlockInput(_gridPos);
+            }
+        });
     }
 }

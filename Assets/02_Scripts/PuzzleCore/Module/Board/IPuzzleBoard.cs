@@ -7,8 +7,10 @@ namespace Puzzle.Core
     /// </summary>
     public class BoardViewAction
     {
-        /// <summary> 해당 연출이 발생한 보드 로직 프레임 </summary>
+        /// <summary> 해당 연출이 발생한 보드 로직 프레임 (리플레이용) </summary>
         public uint frame;
+        /// <summary> 연출이 보여질 순서 번호 (뷰 연출용) </summary>
+        public uint orderIndex;
         /// <summary> 연출의 종류 (파괴, 생성, 이동 등) </summary>
         public ViewType type;
         /// <summary> 주가 되는 좌표 (생성 위치, 파괴 위치 등) </summary>
