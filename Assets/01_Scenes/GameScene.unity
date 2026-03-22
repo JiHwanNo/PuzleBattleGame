@@ -170,7 +170,8 @@ MonoBehaviour:
   cellRoot: {fileID: 1723673889}
   blockRoot: {fileID: 832379425}
   cellSize: 256
-  padding: 1
+  padding: 60
+  offsetY: -0.5
   showDebugGrid: 1
 --- !u!1 &832379424
 GameObject:

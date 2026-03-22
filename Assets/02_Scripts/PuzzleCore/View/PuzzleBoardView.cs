@@ -30,6 +30,12 @@ public class PuzzleBoardView : MonoBehaviour
     /// <summary> 보드 외곽의 여백 크기 </summary>
     public float padding = 1.0f;
 
+    /// <summary> 
+    /// 보드의 수직 위치 오프셋 (0: 중앙, 0.5: 상단 정렬, -0.5: 하단 정렬) 
+    /// </summary>
+    [Range(-0.5f, 0.5f)]
+    public float offsetY = 0f;
+
     /// <summary> 씬 뷰에서 그리드 좌표와 블럭 정보를 표시할지 여부 </summary>
     public bool showDebugGrid = true;
 
@@ -176,14 +182,10 @@ public class PuzzleBoardView : MonoBehaviour
             return;
         }
 
-        // 1. 보드 컨테이너 자체는 (0,0,0)에 고정
-        transform.localPosition = Vector3.zero;
-
-        // 2. 시각적 외곽 크기 계산 (패딩 포함)
+        // 1. 카메라 줌(Orthographic Size) 먼저 결정 (여백 포함)
         float totalRequiredWidth = (_board.Width * cellSize) + (padding * 2f);
         float totalRequiredHeight = (_board.Height * cellSize) + (padding * 2f);
 
-        // 3. 카메라 줌(Orthographic Size) 조절
         if (Camera.main != null)
         {
             float screenAspect = (float)Screen.width / Screen.height;
@@ -195,6 +197,23 @@ public class PuzzleBoardView : MonoBehaviour
             // 카메라 위치 고정 (0,0)
             Camera.main.transform.position = new Vector3(0, 0, -10f);
         }
+
+        // 2. 수직 정렬 오프셋 계산
+        float finalY = 0f;
+        if (Camera.main != null)
+        {
+            float camHeightHalf = Camera.main.orthographicSize;
+            float boardHeightHalf = (_board.Height * cellSize) / 2f;
+            
+            // 화면 끝에서 보드 끝까지의 여유 공간 (단방향)
+            float availableSpace = camHeightHalf - boardHeightHalf - padding;
+            
+            // offsetY 비율에 따라 실제 Y 위치 결정 (0.5면 위로 바짝, -0.5면 아래로 바짝)
+            finalY = offsetY * 2f * availableSpace;
+        }
+
+        // 3. 보드 컨테이너 위치 설정 (X는 0 고정, Y는 계산된 오프셋 적용)
+        transform.localPosition = new Vector3(0, finalY, 0);
     }
 
     private void ClearBoard()
