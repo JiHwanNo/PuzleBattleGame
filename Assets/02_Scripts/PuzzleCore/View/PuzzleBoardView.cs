@@ -410,8 +410,7 @@ public class PuzzleBoardView : MonoBehaviour
                 break;
 
             case ViewType.Create:
-                PuzzleCell cell = _board.GetCell(action.position);
-                if (cell != null && cell.Block != null)
+                if (action.blockData != null)
                 {
                     if (_blockViews.ContainsKey(action.position))
                     {
@@ -427,7 +426,7 @@ public class PuzzleBoardView : MonoBehaviour
                         PuzzleBlockView bView = blockObj.GetComponent<PuzzleBlockView>();
                         if (bView != null)
                         {
-                            bView.Initialize(cell.Block, action.position, this);
+                            bView.Initialize(action.blockData, action.position, this);
                             _blockViews.Add(action.position, bView);
                             bView.PlayCreateAnimation(onComplete);
                         }

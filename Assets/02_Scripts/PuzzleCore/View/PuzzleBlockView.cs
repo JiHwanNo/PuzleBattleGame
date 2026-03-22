@@ -190,13 +190,13 @@ public class PuzzleBlockView : MonoBehaviour
             return;
         }
 
-        // 클릭 애니메이션 재생 후 로직 전달
-        PlayClickAnimation(() =>
+        // 로직 전달은 즉시 수행
+        if (_boardView != null)
         {
-            if (_boardView != null)
-            {
-                _boardView.OnBlockInput(_gridPos);
-            }
-        });
+            _boardView.OnBlockInput(_gridPos);
+        }
+
+        // 클릭 애니메이션 재생 (비동기)
+        PlayClickAnimation(null);
     }
 }

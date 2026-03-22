@@ -455,7 +455,8 @@ namespace Puzzle.Core
                     {
                         type = ViewType.Create,
                         frame = (uint)_frameCount,
-                        position = cell.Position
+                        position = cell.Position,
+                        blockData = cell.Block
                     }, order);
                     generated = true;
                 }
