@@ -31,6 +31,12 @@ namespace Puzzle.Core
         /// <summary> 보드 내부 로직에서 발생하는 로그를 외부로 전달합니다. </summary>
         public Action<string> OnLog { get; set; }
 
+        /// <summary> 블럭을 생성하는 팩토리 인스턴스 </summary>
+        private PuzzleBlockFactory _blockFactory;
+
+        /// <summary> 현재 유저가 선택(클릭)한 블럭의 좌표 </summary>
+        private GridPos? _selectedPos = null;
+
         /// <summary> 유저 입력 좌표 대기열 </summary>
         private Queue<GridPos> _inputQueue = new Queue<GridPos>();
 
@@ -59,6 +65,8 @@ namespace Puzzle.Core
         /// </summary>
         public void Initialize(GameSpec spec)
         {
+            _blockFactory = new PuzzleBlockFactory();
+            _selectedPos = null;
             _inputQueue = new Queue<GridPos>();
             Cells = new Dictionary<GridPos, PuzzleCell>();
             _views = new List<BoardViewAction>();
@@ -90,7 +98,7 @@ namespace Puzzle.Core
                         BlockData bData = gameSpec.GetBlock(cellData.block_id);
                         if (bData != null)
                         {
-                            cell.Block = PuzzleBlockFactory.Create(bData);
+                            cell.Block = _blockFactory.Create(bData);
                         }
                     }
                     Cells[pos] = cell;
@@ -108,6 +116,7 @@ namespace Puzzle.Core
                 return;
             }
 
+            // 중복 입력 방지 (마지막 입력과 같으면 무시)
             if (_inputQueue.Count > 0 && _inputQueue.Last() == input)
             {
                 return;
@@ -115,6 +124,46 @@ namespace Puzzle.Core
 
             _inputQueue.Enqueue(input);
             _recordedInputs.Add(new InputRecord(_frameCount, input));
+
+            // 개별 블럭 조작 로직 (스테이트 기반)
+            var targetCell = GetCell(input);
+            if (targetCell?.Block == null)
+            {
+                return;
+            }
+
+            if (_selectedPos.HasValue)
+            {
+                GridPos prev = _selectedPos.Value;
+                if (prev == input)
+                {
+                    // 같은 블럭 클릭 시 선택 취소
+                    targetCell.Block.SetState(BlockState.Idle);
+                    _selectedPos = null;
+                }
+                else if (IsAdjacent(prev, input))
+                {
+                    // 인접 블럭 클릭 시 즉시 스왑 시도 (Tap-Tap Swap 지원)
+                    ProcessSwapInput(prev, input);
+                    _selectedPos = null;
+                    _inputQueue.Clear(); // 즉시 처리했으므로 대기열 비움
+                }
+                else
+                {
+                    // 인접하지 않은 블럭 클릭 시 이전 선택 취소 후 새로 선택
+                    var prevCell = GetCell(prev);
+                    prevCell?.Block?.SetState(BlockState.Idle);
+                    
+                    _selectedPos = input;
+                    targetCell.Block.SetState(BlockState.Selected);
+                }
+            }
+            else
+            {
+                // 첫 선택
+                _selectedPos = input;
+                targetCell.Block.SetState(BlockState.Selected);
+            }
         }
 
         public bool InputEnd()
@@ -141,6 +190,7 @@ namespace Puzzle.Core
             if (first != last)
             {
                 ProcessSwapInput(first, last);
+                _selectedPos = null; // 스왑 시도 후 선택 해제
             }
             return true;
         }
@@ -154,13 +204,15 @@ namespace Puzzle.Core
                 return;
             }
 
-            // 1. 물리적 스왑
+            // 1. 물리적 스왑 (상태 변경)
+            cellA.Block.SetState(BlockState.Moving);
+            cellB.Block.SetState(BlockState.Moving);
             SwapBlocks(first, second);
             
             // 2. 매칭 여부 확인
             if (FindMatches().Count > 0)
             {
-                // 매칭 성공 -> 매칭 페이즈 진입 (조작 차단)
+                // 매칭 성공 -> 매칭 페이즈 진입
                 State = BoardState.Matching;
             }
             else
@@ -168,6 +220,10 @@ namespace Puzzle.Core
                 // 매칭 실패 -> 원상복구
                 Log("[ThreeMatchBoard] 매칭 실패. 원상복구.");
                 SwapBlocks(first, second);
+                
+                // 복구 후 상태 초기화
+                cellA.Block.SetState(BlockState.Idle);
+                cellB.Block.SetState(BlockState.Idle);
             }
         }
 
@@ -177,6 +233,12 @@ namespace Puzzle.Core
         public void Update()
         {
             _frameCount++;
+
+            // 모든 셀 개별 업데이트 수행 (블럭 및 패널 업데이트 포함)
+            foreach (var cell in Cells.Values)
+            {
+                cell.Update(this);
+            }
 
             // 목표 달성 체크
             if (Objective != null && Objective.IsAllObjectivesCleared())
@@ -188,65 +250,53 @@ namespace Puzzle.Core
             switch (State)
             {
                 case BoardState.Waiting:
-                    // 유저 입력을 기다리는 중
                     break;
 
                 case BoardState.Matching:
-                    // 3. 매칭 및 결과 처리
                     if (ProcessMatching())
                     {
-                        // 파괴 발생 시 낙하 페이즈로 이동
                         State = BoardState.Falling;
                     }
                     else
                     {
-                        // 더 이상 매칭이 없으면 대기 상태로 복귀 (안정화 완료)
                         State = BoardState.Waiting;
+                        // 안정화 시 모든 블럭 상태 Idle로
+                        foreach (var cell in Cells.Values)
+                        {
+                            cell.Block?.SetState(BlockState.Idle);
+                        }
                     }
                     break;
 
                 case BoardState.Falling:
-                    // 4. 이동 (중력 처리)
                     if (ProcessFalling())
                     {
-                        // 블럭이 하나라도 이동했다면 다시 채우기 확인
                         State = BoardState.Filling;
                     }
                     else
                     {
-                        // 이동할 블럭이 없으면 바로 채우기 단계로
                         State = BoardState.Filling;
                     }
                     break;
 
                 case BoardState.Filling:
-                    // 생성기에서 블럭 보충
                     if (ProcessFilling())
                     {
-                        // 블럭이 새로 생성되었다면 다시 낙하시켜야 함
                         State = BoardState.Falling;
                     }
                     else
                     {
-                        // 더 이상 채울 게 없으면 다시 매칭이 생겼는지 확인 (연쇄 매칭 체크)
                         State = BoardState.Matching;
                     }
                     break;
             }
         }
 
-        /// <summary>
-        /// 보드 상에 빈 공간(비어있는 Normal/Generator 셀)이 있는지 확인합니다.
-        /// </summary>
         private bool HasEmptyCell()
         {
             return Cells.Values.Any(c => (c.CellType == CellType.Normal || c.CellType == CellType.Generator) && c.Block == null);
         }
 
-        /// <summary>
-        /// 매칭된 블럭들을 제거합니다.
-        /// </summary>
-        /// <returns>매칭이 발생하여 제거되었는지 여부</returns>
         private bool ProcessMatching()
         {
             var matches = FindMatches();
@@ -260,6 +310,7 @@ namespace Puzzle.Core
                 var cell = GetCell(pos);
                 if (cell?.Block != null)
                 {
+                    cell.Block.SetState(BlockState.Matched); // 파괴 전 상태 변경
                     Objective.OnBlockDestroyed(cell.Block.GetBlockId());
                     cell.Block = null;
                     AddView(new BoardViewAction 
@@ -273,9 +324,6 @@ namespace Puzzle.Core
             return true;
         }
 
-        /// <summary>
-        /// 가로/세로 3개 이상 연속된 블럭들을 찾습니다.
-        /// </summary>
         private HashSet<GridPos> FindMatches()
         {
             HashSet<GridPos> matches = new HashSet<GridPos>();
@@ -335,10 +383,6 @@ namespace Puzzle.Core
             return isMatchable ? cell.Block.GetBlockId() : null;
         }
 
-        /// <summary>
-        /// 블럭들을 아래로 낙하시킵니다.
-        /// </summary>
-        /// <returns>최소 하나 이상의 블럭이 이동했는지 여부</returns>
         private bool ProcessFalling()
         {
             bool anyMoved = false;
@@ -347,7 +391,6 @@ namespace Puzzle.Core
                 for (int y = 0; y < Height; y++)
                 {
                     var currentCell = GetCell(new GridPos(x, y));
-                    // 블럭이 놓일 수 있는 셀인데 비어있는 경우 위에서 찾음
                     if (currentCell != null && (currentCell.CellType == CellType.Normal || currentCell.CellType == CellType.Generator) && currentCell.Block == null)
                     {
                         for (int ay = y + 1; ay < Height; ay++)
@@ -355,7 +398,7 @@ namespace Puzzle.Core
                             var aboveCell = GetCell(new GridPos(x, ay));
                             if (aboveCell != null && aboveCell.Block != null)
                             {
-                                // 블럭 이동 실행
+                                aboveCell.Block.SetState(BlockState.Falling); // 낙하 상태 설정
                                 currentCell.Block = aboveCell.Block;
                                 aboveCell.Block = null;
                                 
@@ -377,18 +420,15 @@ namespace Puzzle.Core
             return anyMoved;
         }
 
-        /// <summary>
-        /// 생성기에서 블럭을 생성합니다.
-        /// </summary>
-        /// <returns>하나 이상의 블럭이 새로 생성되었는지 여부</returns>
         private bool ProcessFilling()
         {
             bool generated = false;
             foreach (var cell in Cells.Values.Where(c => c.CellType == CellType.Generator && c.Block == null))
             {
-                cell.Block = cell.GenerateBlock(gameSpec, Random);
+                cell.Block = cell.GenerateBlock(gameSpec, Random, _blockFactory);
                 if (cell.Block != null)
                 {
+                    cell.Block.SetState(BlockState.Falling); // 생성된 블럭은 일단 낙하 상태로 간주
                     AddView(new BoardViewAction 
                     { 
                         type = ViewType.Create, 

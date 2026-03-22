@@ -281,6 +281,23 @@ namespace Puzzle.Core
         Land
     }
 
+    /// <summary> 개별 블럭의 논리적 상태 </summary>
+    public enum BlockState
+    {
+        /// <summary> 대기 상태 </summary>
+        Idle = 0,
+        /// <summary> 유저에 의해 선택됨 </summary>
+        Selected = 1,
+        /// <summary> 위치 이동/스왑 중 </summary>
+        Moving = 2,
+        /// <summary> 매칭되어 파괴 대기 중 </summary>
+        Matched = 3,
+        /// <summary> 낙하 중 </summary>
+        Falling = 4,
+        /// <summary> 비활성화/파괴됨 </summary>
+        None = 5
+    }
+
     /// <summary>
     /// 리플레이를 위해 특정 프레임에 발생한 유저의 조작 정보를 기록하는 구조체입니다.
     /// </summary>

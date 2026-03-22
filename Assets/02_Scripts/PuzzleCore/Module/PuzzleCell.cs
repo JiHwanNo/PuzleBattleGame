@@ -15,7 +15,7 @@ namespace Puzzle.Core
         public CellType CellType { get; set; }
         
         /// <summary> 이 셀 위에 놓인 블럭 객체. null이면 빈 공간입니다. </summary>
-        public PuzzleBlock Block { get; set; }
+        public BaseBlock Block { get; set; }
         
         /// <summary> 이 셀의 바닥판(Panel) 객체 </summary>
         public PuzzlePanel Panel { get; set; }
@@ -50,10 +50,11 @@ namespace Puzzle.Core
         /// </summary>
         /// <param name="spec">게임 사양서 (블럭 데이터 참조용)</param>
         /// <param name="random">공용 난수 객체</param>
+        /// <param name="factory">블럭 생성 팩토리</param>
         /// <returns>생성된 블럭 객체</returns>
-        public PuzzleBlock GenerateBlock(GameSpec spec, PuzzleRandom random)
+        public BaseBlock GenerateBlock(GameSpec spec, PuzzleRandom random, PuzzleBlockFactory factory)
         {
-            if (CellType != CellType.Generator || generatorBlockIds.Count == 0)
+            if (CellType != CellType.Generator || generatorBlockIds.Count == 0 || factory == null)
             {
                 return null;
             }
@@ -65,7 +66,7 @@ namespace Puzzle.Core
             BlockData bData = spec.GetBlock(blockId);
             if (bData != null)
             {
-                return PuzzleBlockFactory.Create(bData);
+                return factory.Create(bData);
             }
 
             return null;
@@ -74,12 +75,12 @@ namespace Puzzle.Core
         /// <summary>
         /// 셀 내부의 블럭과 패널 상태를 업데이트합니다.
         /// </summary>
-        /// <param name="input">업데이트와 관련된 입력 좌표 (필요 시 활용)</param>
-        public void Update(GridPos input)
+        /// <param name="board">현재 보드 객체</param>
+        public void Update(IPuzzleBoard board)
         {
             if (Block != null)
             {
-                Block.Update();
+                Block.Update(board, Position);
             }
 
             if (Panel != null)

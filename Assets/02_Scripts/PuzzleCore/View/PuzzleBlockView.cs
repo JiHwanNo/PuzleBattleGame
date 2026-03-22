@@ -24,7 +24,7 @@ public class PuzzleBlockView : MonoBehaviour
     }
 
     /// <summary> 이 뷰와 연결된 블럭 모델 데이터 </summary>
-    private PuzzleBlock _blockData;
+    private BaseBlock _blockData;
 
     /// <summary> 이 블럭이 위치한 보드상의 그리드 좌표 </summary>
     private GridPos _gridPos;
@@ -38,12 +38,13 @@ public class PuzzleBlockView : MonoBehaviour
     /// <param name="blockData">연결할 블럭 모델 객체</param>
     /// <param name="pos">배치될 그리드 좌표</param>
     /// <param name="boardView">관리 중인 보드 뷰 객체</param>
-    public void Initialize(PuzzleBlock blockData, GridPos pos, PuzzleBoardView boardView)
+    public void Initialize(BaseBlock blockData, GridPos pos, PuzzleBoardView boardView)
     {
         _blockData = blockData;
         _gridPos = pos;
         _boardView = boardView;
         UpdateVisual();
+        UpdateStateVisual();
     }
 
     /// <summary>
@@ -97,10 +98,49 @@ public class PuzzleBlockView : MonoBehaviour
     }
 
     /// <summary>
+    /// 블럭의 논리적 상태(State)에 따라 색상이나 크기 등 시각적 피드백을 업데이트합니다.
+    /// </summary>
+    public void UpdateStateVisual()
+    {
+        if (_blockData == null || _spriteRenderer == null)
+        {
+            return;
+        }
+
+        switch (_blockData.State)
+        {
+            case BlockState.Selected:
+                // 선택 시 노란색 강조 및 약간 커짐
+                _spriteRenderer.color = Color.yellow;
+                transform.localScale = Vector3.one * 1.1f;
+                break;
+
+            case BlockState.Matched:
+                // 매칭 시 반투명하게 표시
+                _spriteRenderer.color = new Color(1.0f, 1.0f, 1.0f, 0.5f);
+                transform.localScale = Vector3.one;
+                break;
+
+            case BlockState.Moving:
+            case BlockState.Falling:
+                // 이동/낙하 중에는 기본 상태 유지 (필요 시 잔상 효과 등 추가 가능)
+                _spriteRenderer.color = Color.white;
+                transform.localScale = Vector3.one;
+                break;
+
+            default:
+                // 기본 상태 (Idle 등)
+                _spriteRenderer.color = Color.white;
+                transform.localScale = Vector3.one;
+                break;
+        }
+    }
+
+    /// <summary>
     /// 이 뷰가 참조하고 있는 블럭 모델 데이터를 반환합니다.
     /// </summary>
     /// <returns>연결된 블럭 모델 데이터</returns>
-    public PuzzleBlock GetBlockData()
+    public BaseBlock GetBlockData()
     {
         return _blockData;
     }

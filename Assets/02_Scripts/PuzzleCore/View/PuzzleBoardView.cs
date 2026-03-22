@@ -189,7 +189,7 @@ public class PuzzleBoardView : MonoBehaviour
         _cellViews.Add(gridPos, cellView);
     }
 
-    private void CreateBlockView(GridPos gridPos, PuzzleBlock blockData)
+    private void CreateBlockView(GridPos gridPos, BaseBlock blockData)
     {
         if (_blockPrefabObj == null)
         {
@@ -215,6 +215,15 @@ public class PuzzleBoardView : MonoBehaviour
         if (_board == null)
         {
             return;
+        }
+
+        // --- 매 프레임 블럭 상태 시각적 동기화 ---
+        foreach (var kvp in _blockViews)
+        {
+            if (kvp.Value != null)
+            {
+                kvp.Value.UpdateStateVisual();
+            }
         }
 
         List<BoardViewAction> actions = _board.FetchActions();
