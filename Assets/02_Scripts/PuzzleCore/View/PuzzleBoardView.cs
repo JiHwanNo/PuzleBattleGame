@@ -376,14 +376,15 @@ public class PuzzleBoardView : MonoBehaviour
                     }
 
                     GameObject blockObj = PoolManager.Instance.Get(_blockPrefabObj, blockRoot);
-                    blockObj.transform.localPosition = GetLocalPos(action.position);
+                    blockObj.transform.localPosition = GetLocalPos(action.position); // 화면 밖(위) 위치
                     blockObj.name = $"Block_{action.targetPosition.X}_{action.targetPosition.Y}";
 
                     PuzzleBlockView bView = blockObj.GetComponent<PuzzleBlockView>();
                     if (bView != null)
                     {
-                        bView.Initialize(action.blockData, action.targetPosition, this);
-                        // 새로 생성된 뷰를 movingViews에 넣어서 애니메이션이 처리되도록 합니다.
+                        // 일단 시작 위치(position)로 초기화하여 생성
+                        bView.Initialize(action.blockData, action.position, this);
+                        // 새로 생성된 뷰를 movingViews에 넣어서 애니메이션(Fall)이 처리되도록 합니다.
                         movingViews[action.position] = bView;
                     }
                     else
@@ -404,13 +405,13 @@ public class PuzzleBoardView : MonoBehaviour
             if (movingViews.TryGetValue(action.position, out PuzzleBlockView view))
             {
                 GridPos to = action.targetPosition;
-                _blockViews[to] = view;
+                _blockViews[to] = view; // 도착지를 딕셔너리에 등록
 
                 Vector3 targetPos = GetLocalPos(to);
                 
                 System.Action onComplete = () => 
                 {
-                    view.Initialize(view.GetBlockData(), to, this);
+                    view.Initialize(view.GetBlockData(), to, this); // 도착지로 정보 갱신
                     completedCount++;
                 };
 
