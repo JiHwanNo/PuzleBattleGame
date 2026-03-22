@@ -229,11 +229,10 @@ namespace Puzzle.Core
 
         /// <summary>
         /// 보드의 논리 상태를 순차적으로 업데이트합니다.
+        /// 모바일 환경의 가변 프레임(Variable FPS)에 대응하여 최대한 부드러운 연출과 입력을 처리합니다.
         /// </summary>
         public void Update()
         {
-            _frameCount++;
-
             // 모든 셀 개별 업데이트 수행 (블럭 및 패널 업데이트 포함)
             foreach (var cell in Cells.Values)
             {
@@ -290,6 +289,15 @@ namespace Puzzle.Core
                     }
                     break;
             }
+        }
+
+        /// <summary>
+        /// 고정 프레임 간격(Fixed FPS)으로 논리 프레임을 전진시킵니다.
+        /// 리플레이 재현 시 기준점이 되는 시간축 역할을 하며, 결정론적 동작을 보장하기 위해 반드시 여기서만 프레임이 증가해야 합니다.
+        /// </summary>
+        public void FixedUpdate()
+        {
+            _frameCount++;
         }
 
         private bool HasEmptyCell()

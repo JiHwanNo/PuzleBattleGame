@@ -53,6 +53,9 @@ namespace Puzzle.Core
         /// <summary> 매 프레임마다 보드의 상태를 업데이트합니다. </summary>
         void Update();
 
+        /// <summary> 고정 프레임 간격으로 논리 프레임 및 결정론적 로직을 업데이트합니다. </summary>
+        void FixedUpdate();
+
         /// <summary> 보드의 로직 처리를 일시 정지하거나 재개합니다. </summary>
         void Pause(bool pause);
 

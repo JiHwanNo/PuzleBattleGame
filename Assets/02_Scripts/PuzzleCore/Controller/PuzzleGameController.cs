@@ -103,6 +103,19 @@ public class PuzzleGameController : MonoBehaviour
     }
 
     /// <summary>
+    /// 고정 프레임 간격으로 논리 프레임을 업데이트합니다.
+    /// </summary>
+    private void FixedUpdate()
+    {
+        if (!_isInitialized || _board == null)
+        {
+            return;
+        }
+
+        _board.FixedUpdate();
+    }
+
+    /// <summary>
     /// 충돌한 콜라이더로부터 그리드 좌표를 가져옵니다.
     /// </summary>
     /// <param name="col">충돌한 콜라이더</param>
