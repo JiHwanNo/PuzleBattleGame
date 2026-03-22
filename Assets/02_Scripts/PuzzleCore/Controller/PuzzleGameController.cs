@@ -103,21 +103,16 @@ public class PuzzleGameController : MonoBehaviour
     }
 
     /// <summary>
-    /// 충돌한 콜라이더로부터 그리드 좌표를 역산합니다.
+    /// 충돌한 콜라이더로부터 그리드 좌표를 가져옵니다.
     /// </summary>
     /// <param name="col">충돌한 콜라이더</param>
-    /// <returns>계산된 그리드 좌표 혹은 null</returns>
+    /// <returns>블럭 뷰가 가진 그리드 좌표 혹은 null</returns>
     private GridPos? GetGridPosFromCollider(Collider2D col)
     {
         var view = col.GetComponentInParent<PuzzleBlockView>();
         if (view != null)
         {
-            if (boardView != null)
-            {
-                float cs = boardView.cellSize;
-                Vector3 lp = view.transform.localPosition;
-                return new GridPos(Mathf.RoundToInt(lp.x / cs), Mathf.RoundToInt(lp.y / cs));
-            }
+            return view.GridPos;
         }
         return null;
     }

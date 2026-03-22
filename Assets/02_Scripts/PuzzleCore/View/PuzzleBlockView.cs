@@ -29,6 +29,15 @@ public class PuzzleBlockView : MonoBehaviour
     /// <summary> 이 블럭이 위치한 보드상의 그리드 좌표 </summary>
     private GridPos _gridPos;
 
+    /// <summary> 현재 그리드 좌표를 반환하는 프로퍼티 (Controller 등에서 활용) </summary>
+    public GridPos GridPos
+    {
+        get
+        {
+            return _gridPos;
+        }
+    }
+
     /// <summary> 이 블럭을 관리하는 보드 뷰 참조 </summary>
     private PuzzleBoardView _boardView;
 
@@ -123,7 +132,7 @@ public class PuzzleBlockView : MonoBehaviour
 
             case BlockState.Moving:
             case BlockState.Falling:
-                // 이동/낙하 중에는 기본 상태 유지 (필요 시 잔상 효과 등 추가 가능)
+                // 이동/낙하 중에는 기본 상태 유지
                 _spriteRenderer.color = Color.white;
                 transform.localScale = Vector3.one;
                 break;
@@ -150,9 +159,6 @@ public class PuzzleBlockView : MonoBehaviour
     /// </summary>
     public void OnClicked()
     {
-        string blockId = _blockData != null ? _blockData.GetBlockId() : "Unknown";
-        Debug.Log($"[PuzzleBlockView] 블럭 클릭됨! 아이디: {blockId}, 위치: ({_gridPos.X}, {_gridPos.Y})");
-
         if (_boardView != null)
         {
             _boardView.OnBlockInput(_gridPos);

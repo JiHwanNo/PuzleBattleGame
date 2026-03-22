@@ -27,6 +27,9 @@ public class PuzzleBoardView : MonoBehaviour
     /// <summary> 타일 한 칸의 시각적 크기 </summary>
     public float cellSize = 1.0f;
 
+    /// <summary> 보드 외곽의 여백 크기 </summary>
+    public float padding = 1.0f;
+
     /// <summary> 씬 뷰에서 그리드 좌표와 블럭 정보를 표시할지 여부 </summary>
     public bool showDebugGrid = true;
 
@@ -67,7 +70,7 @@ public class PuzzleBoardView : MonoBehaviour
             PuzzleCell cell = kvp.Value;
             
             Transform root = cellRoot != null ? cellRoot : transform;
-            Vector3 worldPos = root.TransformPoint(new Vector3(pos.X * cellSize, pos.Y * cellSize, 0));
+            Vector3 worldPos = root.TransformPoint(GetLocalPos(pos));
             
             string info = $"({pos.X},{pos.Y})";
 
@@ -143,6 +146,55 @@ public class PuzzleBoardView : MonoBehaviour
                 CreateBlockView(gridPos, cell.Block);
             }
         }
+
+        // --- 보드 생성 완료 후 중앙 정렬 및 카메라 줌 조절 ---
+        AlignBoardToCenter();
+    }
+
+    /// <summary>
+    /// 그리드 좌표를 보드 중심 기준의 로컬 월드 좌표로 변환합니다.
+    /// 보드 자체는 (0,0)에 있고, 내부 셀들이 오프셋 배치됩니다.
+    /// </summary>
+    public Vector3 GetLocalPos(GridPos pos)
+    {
+        if (_board == null)
+        {
+            return Vector3.zero;
+        }
+
+        // 보드 중심을 (0,0)으로 만들기 위한 오프셋 계산
+        float offsetX = (_board.Width - 1) * cellSize / 2f;
+        float offsetY = (_board.Height - 1) * cellSize / 2f;
+
+        return new Vector3(pos.X * cellSize - offsetX, pos.Y * cellSize - offsetY, 0);
+    }
+
+    private void AlignBoardToCenter()
+    {
+        if (_board == null)
+        {
+            return;
+        }
+
+        // 1. 보드 컨테이너 자체는 (0,0,0)에 고정
+        transform.localPosition = Vector3.zero;
+
+        // 2. 시각적 외곽 크기 계산 (패딩 포함)
+        float totalRequiredWidth = (_board.Width * cellSize) + (padding * 2f);
+        float totalRequiredHeight = (_board.Height * cellSize) + (padding * 2f);
+
+        // 3. 카메라 줌(Orthographic Size) 조절
+        if (Camera.main != null)
+        {
+            float screenAspect = (float)Screen.width / Screen.height;
+            float sizeByHeight = totalRequiredHeight / 2f;
+            float sizeByWidth = (totalRequiredWidth / 2f) / screenAspect;
+
+            Camera.main.orthographicSize = Mathf.Max(sizeByHeight, sizeByWidth);
+            
+            // 카메라 위치 고정 (0,0)
+            Camera.main.transform.position = new Vector3(0, 0, -10f);
+        }
     }
 
     private void ClearBoard()
@@ -174,9 +226,8 @@ public class PuzzleBoardView : MonoBehaviour
             return;
         }
 
-        Vector3 localPos = new Vector3(gridPos.X * cellSize, gridPos.Y * cellSize, 0);
         GameObject cellObj = PoolManager.Instance.Get(_cellPrefabObj, cellRoot);
-        cellObj.transform.localPosition = localPos;
+        cellObj.transform.localPosition = GetLocalPos(gridPos);
         cellObj.name = $"Cell_{gridPos.X}_{gridPos.Y}";
 
         PuzzleCellView cellView = cellObj.GetComponent<PuzzleCellView>();
@@ -196,10 +247,8 @@ public class PuzzleBoardView : MonoBehaviour
             return;
         }
 
-        // 레이어 정렬로 해결되므로 Z는 0으로 고정
-        Vector3 localPos = new Vector3(gridPos.X * cellSize, gridPos.Y * cellSize, 0);
         GameObject blockObj = PoolManager.Instance.Get(_blockPrefabObj, blockRoot);
-        blockObj.transform.localPosition = localPos;
+        blockObj.transform.localPosition = GetLocalPos(gridPos);
         blockObj.name = $"Block_{gridPos.X}_{gridPos.Y}";
 
         PuzzleBlockView blockView = blockObj.GetComponent<PuzzleBlockView>();
@@ -264,9 +313,7 @@ public class PuzzleBoardView : MonoBehaviour
                 GridPos to = action.targetPosition;
                 _blockViews[to] = view;
 
-                // Z좌표 0 유지
-                Vector3 targetLocalPos = new Vector3(to.X * cellSize, to.Y * cellSize, 0);
-                view.transform.localPosition = targetLocalPos;
+                view.transform.localPosition = GetLocalPos(to);
                 view.Initialize(view.GetBlockData(), to, this);
             }
         }
