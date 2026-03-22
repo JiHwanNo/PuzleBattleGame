@@ -353,81 +353,75 @@ public class PuzzleBoardView : MonoBehaviour
         int completedCount = 0;
         int totalCount = moveActions.Count;
 
-        // 1. 기존 뷰 이동 처리를 위한 캐싱 및 딕셔너리에서 제거
-        Dictionary<GridPos, PuzzleBlockView> movingViews = new Dictionary<GridPos, PuzzleBlockView>();
+        // 1단계: 이동하거나 새로 생성될 뷰들을 임시 저장소에 모으고, 기존 위치에서 제거 (충돌 방지)
+        Dictionary<BoardViewAction, PuzzleBlockView> actionToViewMap = new Dictionary<BoardViewAction, PuzzleBlockView>();
+        
         foreach (var action in moveActions)
         {
             if (action.type == ViewType.Move || action.type == ViewType.Fall)
             {
                 if (_blockViews.TryGetValue(action.position, out PuzzleBlockView view))
                 {
-                    movingViews[action.position] = view;
-                    _blockViews.Remove(action.position);
+                    actionToViewMap[action] = view;
+                    _blockViews.Remove(action.position); // 기존 자리 비움
                 }
             }
             else if (action.type == ViewType.CreateAndFall)
             {
-                // CreateAndFall은 화면에 없는 상태에서 시작하므로 블럭을 먼저 생성합니다.
-                if (_blockPrefabObj != null && action.blockData != null)
+                if (action.blockData != null && _blockPrefabObj != null)
                 {
+                    // 목적지에 이미 블럭이 있다면 미리 제거 (안전 장치)
                     if (_blockViews.ContainsKey(action.targetPosition))
                     {
                         HandleImmediateDestroy(action.targetPosition);
                     }
 
                     GameObject blockObj = PoolManager.Instance.Get(_blockPrefabObj, blockRoot);
-                    blockObj.transform.localPosition = GetLocalPos(action.position); // 화면 밖(위) 위치
+                    blockObj.transform.localPosition = GetLocalPos(action.position); // 화면 밖 시작 위치
                     blockObj.name = $"Block_{action.targetPosition.X}_{action.targetPosition.Y}";
 
                     PuzzleBlockView bView = blockObj.GetComponent<PuzzleBlockView>();
                     if (bView != null)
                     {
-                        // 일단 시작 위치(position)로 초기화하여 생성
                         bView.Initialize(action.blockData, action.position, this);
-                        // 새로 생성된 뷰를 movingViews에 넣어서 애니메이션(Fall)이 처리되도록 합니다.
-                        movingViews[action.position] = bView;
+                        actionToViewMap[action] = bView;
                     }
-                    else
-                    {
-                        completedCount++; // 에러 방어
-                    }
-                }
-                else
-                {
-                    completedCount++;
                 }
             }
         }
 
-        // 2. 새로운 위치를 딕셔너리에 등록하고 애니메이션 시작
-        foreach (var action in moveActions)
+        // 2단계: 모든 뷰를 새로운 타겟 위치로 한꺼번에 등록하고 애니메이션 시작
+        foreach (var pair in actionToViewMap)
         {
-            if (movingViews.TryGetValue(action.position, out PuzzleBlockView view))
-            {
-                GridPos to = action.targetPosition;
-                _blockViews[to] = view; // 도착지를 딕셔너리에 등록
+            BoardViewAction action = pair.Key;
+            PuzzleBlockView view = pair.Value;
+            GridPos to = action.targetPosition;
 
-                Vector3 targetPos = GetLocalPos(to);
-                
-                System.Action onComplete = () => 
-                {
-                    view.Initialize(view.GetBlockData(), to, this); // 도착지로 정보 갱신
-                    completedCount++;
-                };
+            // 목적지로 블럭 등록
+            _blockViews[to] = view;
 
-                if (action.type == ViewType.Move)
-                {
-                    view.PlayMoveAnimation(targetPos, onComplete);
-                }
-                else // Fall or CreateAndFall
-                {
-                    view.PlayFallAnimation(targetPos, onComplete);
-                }
-            }
-            else
+            Vector3 targetPos = GetLocalPos(to);
+            System.Action onComplete = () => 
             {
+                view.Initialize(view.GetBlockData(), to, this); // 최종 위치 정보 갱신
                 completedCount++;
+            };
+
+            if (action.type == ViewType.Move)
+            {
+                view.PlayMoveAnimation(targetPos, onComplete);
             }
+            else // Fall or CreateAndFall
+            {
+                view.PlayFallAnimation(targetPos, onComplete);
+            }
+        }
+
+        // 뷰를 찾지 못한 예외적인 액션들에 대한 처리
+        int processedCount = actionToViewMap.Count;
+        if (processedCount < totalCount)
+        {
+            completedCount += (totalCount - processedCount);
         }
 
         while (completedCount < totalCount)

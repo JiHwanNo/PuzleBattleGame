@@ -54,6 +54,10 @@ public class PuzzleBlockView : MonoBehaviour
         _blockData = blockData;
         _gridPos = pos;
         _boardView = boardView;
+
+        // 생성되거나 풀에서 재사용될 때 이전의 애니메이션 상태(예: Scale 0)를 리셋
+        transform.localScale = Vector3.one;
+
         UpdateVisual();
         UpdateStateVisual();
     }

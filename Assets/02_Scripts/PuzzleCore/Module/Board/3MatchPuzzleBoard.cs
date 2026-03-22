@@ -237,13 +237,11 @@ namespace Puzzle.Core
         /// </summary>
         public void Update()
         {
-            // 모든 셀 개별 업데이트 수행 (블럭 및 패널 업데이트 포함)
             foreach (var cell in Cells.Values)
             {
                 cell.Update(this);
             }
 
-            // 목표 달성 체크
             if (Objective != null && Objective.IsAllObjectivesCleared())
             {
                 State = BoardState.Finish;
@@ -263,9 +261,8 @@ namespace Puzzle.Core
                     else
                     {
                         State = BoardState.Waiting;
-                        _currentOrderIndex = 0; // 보드가 대기 상태가 되면 연출 순서 초기화
+                        _currentOrderIndex = 0; 
 
-                        // 안정화 시 모든 블럭 상태 Idle로
                         foreach (var cell in Cells.Values)
                         {
                             cell.Block?.SetState(BlockState.Idle);
@@ -274,25 +271,18 @@ namespace Puzzle.Core
                     break;
 
                 case BoardState.Falling:
-                    if (ProcessFalling())
+                    if (ProcessFallingAndFilling())
                     {
-                        State = BoardState.Filling;
-                    }
-                    else
-                    {
-                        State = BoardState.Filling;
-                    }
-                    break;
-
-                case BoardState.Filling:
-                    if (ProcessFilling())
-                    {
-                        State = BoardState.Falling;
+                        State = BoardState.Matching;
                     }
                     else
                     {
                         State = BoardState.Matching;
                     }
+                    break;
+
+                case BoardState.Filling:
+                    State = BoardState.Matching;
                     break;
             }
         }
@@ -319,22 +309,23 @@ namespace Puzzle.Core
                 return false;
             }
 
-            // 🔥 수정: 찾은 모든 매칭 블럭(십자가 포함)의 파괴 연출을 하나의 오더로 묶습니다.
-            uint order = _currentOrderIndex++;
+            // 이번 매칭 시퀀스의 터지는 연출을 하나의 그룹으로 묶음
+            uint burstOrder = _currentOrderIndex++;
             foreach (var pos in matches)
             {
                 var cell = GetCell(pos);
                 if (cell?.Block != null)
                 {
-                    cell.Block.SetState(BlockState.Matched); // 파괴 전 상태 변경
+                    cell.Block.SetState(BlockState.Matched);
                     Objective.OnBlockDestroyed(cell.Block.GetBlockId());
                     cell.Block = null;
+
                     AddView(new BoardViewAction
                     {
                         type = ViewType.Destroy,
                         frame = (uint)_frameCount,
                         position = pos
-                    }, order);
+                    }, burstOrder);
                 }
             }
             return true;
@@ -398,74 +389,100 @@ namespace Puzzle.Core
             return isMatchable ? cell.Block.GetBlockId() : null;
         }
 
-        private bool ProcessFalling()
+        private bool ProcessFallingAndFilling()
         {
-            bool anyMoved = false;
-            uint order = _currentOrderIndex++; // 🔥 수정: 동시 낙하 연출을 하나로 묶음
+            bool anyChanged = false;
+            // 낙하 연출 그룹 (터지는 연출과 분리된 다음 오더)
+            uint fallOrder = _currentOrderIndex++;
+
             for (int x = 0; x < Width; x++)
             {
+                // 1단계: 각 열에서 블럭들을 아래로 모으기 (Write Index 방식)
+                int writeY = 0;
                 for (int y = 0; y < Height; y++)
                 {
-                    var currentCell = GetCell(new GridPos(x, y));
-                    if (currentCell != null && (currentCell.CellType == CellType.Normal || currentCell.CellType == CellType.Generator) && currentCell.Block == null)
+                    var cell = GetCell(new GridPos(x, y));
+                    if (cell == null) continue;
+
+                    // 장애물 셀 처리 (장애물이 있으면 그 위로만 쌓이게 하려면 추가 로직이 필요하나, 일단 기본 흐름 구현)
+                    if (cell.CellType == CellType.Close || cell.CellType == CellType.Lock)
                     {
-                        for (int ay = y + 1; ay < Height; ay++)
+                        writeY = y + 1;
+                        continue;
+                    }
+
+                    if (cell.Block != null)
+                    {
+                        if (writeY != y)
                         {
-                            var aboveCell = GetCell(new GridPos(x, ay));
-                            if (aboveCell != null && aboveCell.Block != null)
+                            // 블럭 이동 발생
+                            var targetCell = GetCell(new GridPos(x, writeY));
+                            if (targetCell != null)
                             {
-                                aboveCell.Block.SetState(BlockState.Falling); // 낙하 상태 설정
-                                currentCell.Block = aboveCell.Block;
-                                aboveCell.Block = null;
+                                BaseBlock movingBlock = cell.Block;
+                                cell.Block = null;
+                                targetCell.Block = movingBlock;
+                                targetCell.Block.SetState(BlockState.Falling);
 
                                 AddView(new BoardViewAction
                                 {
-                                    type = ViewType.Move,
+                                    type = ViewType.Fall,
                                     frame = (uint)_frameCount,
-                                    position = new GridPos(x, ay),
-                                    targetPosition = new GridPos(x, y)
-                                }, order);
+                                    position = new GridPos(x, y),
+                                    targetPosition = new GridPos(x, writeY)
+                                }, fallOrder);
 
-                                anyMoved = true;
-                                break;
+                                anyChanged = true;
+                            }
+                        }
+                        writeY++;
+                    }
+                }
+
+                // 2단계: 남은 위쪽 빈칸들에 새 블럭 보충
+                PuzzleCell generator = null;
+                for (int y = Height - 1; y >= 0; y--)
+                {
+                    var c = GetCell(new GridPos(x, y));
+                    if (c?.CellType == CellType.Generator) { generator = c; break; }
+                }
+
+                if (generator != null)
+                {
+                    int spawnSeq = 0;
+                    for (int y = writeY; y < Height; y++)
+                    {
+                        var cell = GetCell(new GridPos(x, y));
+                        if (cell != null && cell.Block == null && 
+                            (cell.CellType == CellType.Normal || cell.CellType == CellType.Generator))
+                        {
+                            cell.Block = generator.GenerateBlock(gameSpec, Random, _blockFactory);
+                            if (cell.Block != null)
+                            {
+                                cell.Block.SetState(BlockState.Falling);
+                                
+                                // 화면 밖에서 줄지어 내려오도록 설정
+                                GridPos spawnPos = new GridPos(x, Height + spawnSeq);
+                                spawnSeq++;
+
+                                AddView(new BoardViewAction
+                                {
+                                    type = ViewType.CreateAndFall,
+                                    frame = (uint)_frameCount,
+                                    position = spawnPos,
+                                    targetPosition = new GridPos(x, y),
+                                    blockData = cell.Block
+                                }, fallOrder);
+
+                                anyChanged = true;
                             }
                         }
                     }
                 }
             }
-            if (!anyMoved)
-            {
-                _currentOrderIndex--; // 낭비된 오더 인덱스 복구
-            }
-            return anyMoved;
-        }
 
-        // 블록 생성(Filling) 동작을 동일한 orderIndex로 묶음
-        private bool ProcessFilling()
-        {
-            bool generated = false;
-            uint order = _currentOrderIndex++; // 🔥 수정: 동시 생성 연출을 하나로 묶음
-            foreach (var cell in Cells.Values.Where(c => c.CellType == CellType.Generator && c.Block == null))
-            {
-                cell.Block = cell.GenerateBlock(gameSpec, Random, _blockFactory);
-                if (cell.Block != null)
-                {
-                    cell.Block.SetState(BlockState.Falling); // 생성된 블럭은 일단 낙하 상태로 간주
-                    AddView(new BoardViewAction
-                    {
-                        type = ViewType.Create,
-                        frame = (uint)_frameCount,
-                        position = cell.Position,
-                        blockData = cell.Block
-                    }, order);
-                    generated = true;
-                }
-            }
-            if (!generated)
-            {
-                _currentOrderIndex--; // 낭비된 오더 인덱스 복구
-            }
-            return generated;
+            if (!anyChanged) _currentOrderIndex--;
+            return anyChanged;
         }
 
         public void Pause(bool pause) { }
