@@ -87,9 +87,9 @@ namespace Puzzle.Core
                 foreach (var cellData in gameSpec.stageData.cells)
                 {
                     GridPos pos = new GridPos(cellData.x, cellData.y);
-                    PuzzleCell cell = new PuzzleCell(pos) 
-                    { 
-                        CellType = (CellType)cellData.cell_type 
+                    PuzzleCell cell = new PuzzleCell(pos)
+                    {
+                        CellType = (CellType)cellData.cell_type
                     };
 
                     if (cell.CellType == CellType.Generator && cellData.generator_block_ids != null)
@@ -108,7 +108,7 @@ namespace Puzzle.Core
                     Cells[pos] = cell;
                 }
             }
-            
+
             // 시작 시 매칭 체크부터 수행
             State = BoardState.Matching;
         }
@@ -157,7 +157,7 @@ namespace Puzzle.Core
                     // 인접하지 않은 블럭 클릭 시 이전 선택 취소 후 새로 선택
                     var prevCell = GetCell(prev);
                     prevCell?.Block?.SetState(BlockState.Idle);
-                    
+
                     _selectedPos = input;
                     targetCell.Block.SetState(BlockState.Selected);
                 }
@@ -212,7 +212,7 @@ namespace Puzzle.Core
             cellA.Block.SetState(BlockState.Moving);
             cellB.Block.SetState(BlockState.Moving);
             SwapBlocks(first, second);
-            
+
             // 2. 매칭 여부 확인
             if (FindMatches().Count > 0)
             {
@@ -224,7 +224,7 @@ namespace Puzzle.Core
                 // 매칭 실패 -> 원상복구
                 Log("[ThreeMatchBoard] 매칭 실패. 원상복구.");
                 SwapBlocks(first, second);
-                
+
                 // 복구 후 상태 초기화
                 cellA.Block.SetState(BlockState.Idle);
                 cellB.Block.SetState(BlockState.Idle);
@@ -264,7 +264,7 @@ namespace Puzzle.Core
                     {
                         State = BoardState.Waiting;
                         _currentOrderIndex = 0; // 보드가 대기 상태가 되면 연출 순서 초기화
-                        
+
                         // 안정화 시 모든 블럭 상태 Idle로
                         foreach (var cell in Cells.Values)
                         {
@@ -319,6 +319,8 @@ namespace Puzzle.Core
                 return false;
             }
 
+            // 🔥 수정: 찾은 모든 매칭 블럭(십자가 포함)의 파괴 연출을 하나의 오더로 묶습니다.
+            uint order = _currentOrderIndex++;
             foreach (var pos in matches)
             {
                 var cell = GetCell(pos);
@@ -327,21 +329,20 @@ namespace Puzzle.Core
                     cell.Block.SetState(BlockState.Matched); // 파괴 전 상태 변경
                     Objective.OnBlockDestroyed(cell.Block.GetBlockId());
                     cell.Block = null;
-                    AddView(new BoardViewAction 
-                    { 
-                        type = ViewType.Destroy, 
-                        frame = (uint)_frameCount, 
-                        position = pos 
-                    });
+                    AddView(new BoardViewAction
+                    {
+                        type = ViewType.Destroy,
+                        frame = (uint)_frameCount,
+                        position = pos
+                    }, order);
                 }
             }
             return true;
         }
-
         private HashSet<GridPos> FindMatches()
         {
             HashSet<GridPos> matches = new HashSet<GridPos>();
-            
+
             // 가로 탐색
             for (int y = 0; y < Height; y++)
             {
@@ -350,15 +351,15 @@ namespace Puzzle.Core
                     string id = GetBlockIdAt(new GridPos(x, y));
                     if (id != null && id == GetBlockIdAt(new GridPos(x + 1, y)) && id == GetBlockIdAt(new GridPos(x + 2, y)))
                     {
-                        matches.Add(new GridPos(x, y)); 
-                        matches.Add(new GridPos(x + 1, y)); 
+                        matches.Add(new GridPos(x, y));
+                        matches.Add(new GridPos(x + 1, y));
                         matches.Add(new GridPos(x + 2, y));
 
-                        int nx = x + 3; 
-                        while (nx < Width && GetBlockIdAt(new GridPos(nx, y)) == id) 
-                        { 
-                            matches.Add(new GridPos(nx, y)); 
-                            nx++; 
+                        int nx = x + 3;
+                        while (nx < Width && GetBlockIdAt(new GridPos(nx, y)) == id)
+                        {
+                            matches.Add(new GridPos(nx, y));
+                            nx++;
                         }
                         x = nx - 1;
                     }
@@ -373,15 +374,15 @@ namespace Puzzle.Core
                     string id = GetBlockIdAt(new GridPos(x, y));
                     if (id != null && id == GetBlockIdAt(new GridPos(x, y + 1)) && id == GetBlockIdAt(new GridPos(x, y + 2)))
                     {
-                        matches.Add(new GridPos(x, y)); 
-                        matches.Add(new GridPos(x, y + 1)); 
+                        matches.Add(new GridPos(x, y));
+                        matches.Add(new GridPos(x, y + 1));
                         matches.Add(new GridPos(x, y + 2));
 
-                        int ny = y + 3; 
-                        while (ny < Height && GetBlockIdAt(new GridPos(x, ny)) == id) 
-                        { 
-                            matches.Add(new GridPos(x, ny)); 
-                            ny++; 
+                        int ny = y + 3;
+                        while (ny < Height && GetBlockIdAt(new GridPos(x, ny)) == id)
+                        {
+                            matches.Add(new GridPos(x, ny));
+                            ny++;
                         }
                         y = ny - 1;
                     }
@@ -400,6 +401,7 @@ namespace Puzzle.Core
         private bool ProcessFalling()
         {
             bool anyMoved = false;
+            uint order = _currentOrderIndex++; // 🔥 수정: 동시 낙하 연출을 하나로 묶음
             for (int x = 0; x < Width; x++)
             {
                 for (int y = 0; y < Height; y++)
@@ -415,84 +417,97 @@ namespace Puzzle.Core
                                 aboveCell.Block.SetState(BlockState.Falling); // 낙하 상태 설정
                                 currentCell.Block = aboveCell.Block;
                                 aboveCell.Block = null;
-                                
-                                AddView(new BoardViewAction 
-                                { 
-                                    type = ViewType.Move, 
-                                    frame = (uint)_frameCount, 
-                                    position = new GridPos(x, ay), 
-                                    targetPosition = new GridPos(x, y) 
-                                });
-                                
-                                anyMoved = true; 
+
+                                AddView(new BoardViewAction
+                                {
+                                    type = ViewType.Move,
+                                    frame = (uint)_frameCount,
+                                    position = new GridPos(x, ay),
+                                    targetPosition = new GridPos(x, y)
+                                }, order);
+
+                                anyMoved = true;
                                 break;
                             }
                         }
                     }
                 }
             }
+            if (!anyMoved)
+            {
+                _currentOrderIndex--; // 낭비된 오더 인덱스 복구
+            }
             return anyMoved;
         }
 
+        // 블록 생성(Filling) 동작을 동일한 orderIndex로 묶음
         private bool ProcessFilling()
         {
             bool generated = false;
+            uint order = _currentOrderIndex++; // 🔥 수정: 동시 생성 연출을 하나로 묶음
             foreach (var cell in Cells.Values.Where(c => c.CellType == CellType.Generator && c.Block == null))
             {
                 cell.Block = cell.GenerateBlock(gameSpec, Random, _blockFactory);
                 if (cell.Block != null)
                 {
                     cell.Block.SetState(BlockState.Falling); // 생성된 블럭은 일단 낙하 상태로 간주
-                    AddView(new BoardViewAction 
-                    { 
-                        type = ViewType.Create, 
-                        frame = (uint)_frameCount, 
-                        position = cell.Position 
-                    });
+                    AddView(new BoardViewAction
+                    {
+                        type = ViewType.Create,
+                        frame = (uint)_frameCount,
+                        position = cell.Position
+                    }, order);
                     generated = true;
                 }
+            }
+            if (!generated)
+            {
+                _currentOrderIndex--; // 낭비된 오더 인덱스 복구
             }
             return generated;
         }
 
         public void Pause(bool pause) { }
         public List<InputRecord> GetRecordedInputs() => new List<InputRecord>(_recordedInputs);
-        
-        public List<BoardViewAction> FetchActions() 
-        { 
+
+        public List<BoardViewAction> FetchActions()
+        {
             // 프레임 우선, 프레임이 같다면 orderIndex가 작은 순서대로 정렬하여 반환
-            var res = _views.OrderBy(v => v.frame).ThenBy(v => v.orderIndex).ToList(); 
-            _views.Clear(); 
-            return res; 
+            var res = _views.OrderBy(v => v.frame).ThenBy(v => v.orderIndex).ToList();
+            _views.Clear();
+            return res;
         }
-        
+
         /// <summary>
         /// 화면 연출용 액션을 추가합니다. 추가될 때마다 orderIndex가 자동으로 증가하여 순차적 연출을 보장합니다.
         /// </summary>
-        public void AddView(BoardViewAction view) 
+        public void AddView(BoardViewAction view, uint? customOrder = null)
         {
-            view.orderIndex = _currentOrderIndex++;
+            view.orderIndex = customOrder ?? _currentOrderIndex++;
             _views.Add(view);
         }
+        
+
 
         public PuzzleCell GetCell(GridPos pos) => Cells.TryGetValue(pos, out var c) ? c : null;
         private bool IsAdjacent(GridPos a, GridPos b) => (Math.Abs(a.X - b.X) == 1 && a.Y == b.Y) || (Math.Abs(a.Y - b.Y) == 1 && a.X == b.X);
 
+        // 스왑 동작을 동일한 orderIndex로 묶음
         private void SwapBlocks(GridPos a, GridPos b)
         {
-            var ca = GetCell(a); 
+            var ca = GetCell(a);
             var cb = GetCell(b);
-            if (ca == null || cb == null)
-            {
-                return;
-            }
+            if (ca == null || cb == null) return;
 
-            var t = ca.Block; 
-            ca.Block = cb.Block; 
+            var t = ca.Block;
+            ca.Block = cb.Block;
             cb.Block = t;
 
-            AddView(new BoardViewAction { type = ViewType.Move, frame = (uint)_frameCount, position = a, targetPosition = b });
-            AddView(new BoardViewAction { type = ViewType.Move, frame = (uint)_frameCount, position = b, targetPosition = a });
+            uint order = _currentOrderIndex++; // 스왑용 단일 오더 발급
+            AddView(new BoardViewAction { type = ViewType.Move, frame = (uint)_frameCount, position = a, targetPosition = b }, order);
+            AddView(new BoardViewAction { type = ViewType.Move, frame = (uint)_frameCount, position = b, targetPosition = a }, order);
         }
+
+        
     }
 }

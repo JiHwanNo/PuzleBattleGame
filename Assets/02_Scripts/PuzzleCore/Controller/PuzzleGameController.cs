@@ -71,21 +71,31 @@ public class PuzzleGameController : MonoBehaviour
         // 1. 마우스/터치를 누르고 있는 중인가?
         if (IsPointerHeld())
         {
+            // 뷰가 애니메이션 연출 중일 때는 어떠한 입력도 받지 않도록 차단합니다!
+            if (boardView != null && boardView.IsAnimating)
+            {
+                return;
+            }
+
+
             Vector2 screenPosition = GetPointerPosition();
             Vector2 worldPosition = Camera.main.ScreenToWorldPoint(screenPosition);
 
             // 현재 위치 아래의 콜라이더 감지
-            Collider2D hitCollider = Physics2D.OverlapPoint(worldPosition);
-            if (hitCollider != null)
+            Collider2D[] hitColliders = Physics2D.OverlapPointAll(worldPosition);
+
+            // 모든 충돌체를 순회하며 PuzzleBlockCollider를 찾습니다.
+            foreach (var hitCollider in hitColliders)
             {
                 if (hitCollider.TryGetComponent<PuzzleBlockCollider>(out var blockCollider))
                 {
-                    // 원본 로직: Collider 단위 중복 체크 후 블럭 클릭 이벤트 전달
                     GridPos? pos = GetGridPosFromCollider(hitCollider);
                     if (pos.HasValue && !_inputPath.Contains(pos.Value))
                     {
                         _inputPath.Add(pos.Value);
                         blockCollider.OnClickBlock();
+
+                        break;
                     }
                 }
             }

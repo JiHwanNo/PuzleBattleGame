@@ -62,7 +62,7 @@ namespace Puzzle.Core
         void Pause(bool pause);
 
         /// <summary> 화면 연출을 위해 발생한 상태 변화를 추가합니다. </summary>
-        void AddView(BoardViewAction view);
+        public void AddView(BoardViewAction view, uint? customOrder = null);
 
         /// <summary> 발생한 View 액션 리스트를 가져오고 보드 내역을 비웁니다. (소비형) </summary>
         List<BoardViewAction> FetchActions();

@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 using Puzzle.Core;
+using System.Collections;
 
 /// <summary>
 /// 퍼즐 보드의 데이터(Model)를 받아 화면에 시각적으로 렌더링하는 View 클래스입니다.
@@ -292,10 +293,15 @@ public class PuzzleBoardView : MonoBehaviour
         List<BoardViewAction> actions = _board.FetchActions();
         if (actions != null && actions.Count > 0)
         {
-            // 프레임 우선, 프레임이 같다면 orderIndex가 작은 순서대로 개별 그룹화하여 큐에 추가
-            foreach (var action in actions.OrderBy(a => a.frame).ThenBy(a => a.orderIndex))
+            // 🔥 수정: 프레임과 orderIndex가 같은 액션들을 하나의 그룹으로 묶어 일괄(Batch) 처리하도록 큐에 넣습니다.
+            var groupedActions = actions
+                .GroupBy(a => new { a.frame, a.orderIndex })
+                .OrderBy(g => g.Key.frame)
+                .ThenBy(g => g.Key.orderIndex);
+
+            foreach (var group in groupedActions)
             {
-                _actionQueue.Enqueue(new List<BoardViewAction> { action });
+                _actionQueue.Enqueue(group.ToList());
             }
         }
 
@@ -305,7 +311,7 @@ public class PuzzleBoardView : MonoBehaviour
         }
     }
 
-    private System.Collections.IEnumerator ProcessActionQueue()
+    private IEnumerator ProcessActionQueue()
     {
         _isAnimating = true;
 
