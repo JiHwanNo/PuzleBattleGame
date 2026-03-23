@@ -43,6 +43,9 @@ namespace Puzzle.Core
             // 1. 전체 점수 누적
             CurrentScore += score;
 
+            if (string.IsNullOrEmpty(blockId))
+                return;
+
             // 2. 특정 블럭 수집 카운트 갱신
             if (_currentCounts.ContainsKey(blockId))
             {

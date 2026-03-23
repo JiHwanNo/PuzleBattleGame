@@ -450,7 +450,7 @@ namespace Puzzle.Core
                 if (generator != null)
                 {
                     int spawnSeq = 0;
-                    for (int y = writeY; y < Height; y++)
+                    for (int y = 0; y < Height; y++)
                     {
                         var cell = GetCell(new GridPos(x, y));
                         if (cell != null && cell.Block == null && 
