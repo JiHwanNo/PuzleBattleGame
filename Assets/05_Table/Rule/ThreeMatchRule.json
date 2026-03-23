@@ -1,30 +1,27 @@
 {
   "_comment_global": "게임 전체의 규칙과 블럭의 속성을 정의하는 데이터 파일입니다.",
-  "rules": [
-    {
-      "_comment": "사각형 3매치 기본 룰 설정",
-      "ruleId": "ThreeMatch_Quadrangle",
-      "puzzleType": 3,
-      "_puzzleType_info": "1: ThreeMatch, 2: Link, 3: TapMatch",
-      "boardShape": 1,
-      "_boardShape_info": "1: Quadrangle, 2: Hexagon",
-      "objectives": [
-        {
-          "_comment": "목표 점수 달성 조건",
-          "type": 0,
-          "_type_info": "0: Score, 1: CollectBlock",
-          "count": 1000
-        },
-        {
-          "_comment": "특정 블럭 수집 조건 (100-1 블럭 20개)",
-          "type": 1,
-          "targetId": "100-1",
-          "count": 20
-        }
-      ]
-    }
-  ],
-
+  "rule": {
+    "_comment": "사각형 3매치 기본 룰 설정",
+    "ruleId": "ThreeMatch_Quadrangle",
+    "puzzleType": 1,
+    "_puzzleType_info": "1: ThreeMatch, 2: Link, 3: TapMatch",
+    "boardShape": 1,
+    "_boardShape_info": "1: Quadrangle, 2: Hexagon",
+    "objectives": [
+      {
+        "_comment": "목표 점수 달성 조건",
+        "type": 0,
+        "_type_info": "0: Score, 1: CollectBlock",
+        "count": 1000
+      },
+      {
+        "_comment": "특정 블럭 수집 조건 (100-1 블럭 20개)",
+        "type": 1,
+        "targetId": "100-1",
+        "count": 20
+      }
+    ]
+  },
   "blocks": [
     {
       "_comment": "기본 빨간색 블럭",

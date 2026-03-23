@@ -46,7 +46,7 @@ Gemini CLI가 다음 작업을 이어가거나 컨텍스트를 파악할 때 참
   - 비동기(`LoadAssetAsync`, `LoadGameObjectAsync`) 및 동기(`LoadAsset`, `LoadGameObject`) 로드 메서드 제공.
   - 로드된 에셋 및 프리팹 캐싱 기능(`_addressablePacket`) 적용 완료.
 - **스테이지 및 규칙 데이터 주입 (StageInjection)**:
-  - `GameRule.json`과 `Stage.json`을 읽어 게임 시작 전 전체 설정값인 `GameSpec`을 완성하는 구조 구축.
+  - `ThreeMatchRule.json` / `TapMatchRule.json`과 `Stage.json`을 읽어 게임 시작 전 전체 설정값인 `GameSpec`을 완성하는 구조 구축. (기존 배열 형태를 단일 `rule` 객체 형태로 분리 및 최적화)
   - JSON 데이터를 파싱하여 코어 모델(Model)에 전달할 준비 완료.
 - **로비 및 씬 흐름 연동 (LobbyMain)**:
   - 로비 씬 진입 시 초기화 로직 구현.
