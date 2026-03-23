@@ -43,6 +43,9 @@ public class PuzzleGameController : MonoBehaviour
             case PuzzleType.Link:
                 _board = new ThreeMatchPuzzleBoard(); // TODO: Link 전용 보드 구현 시 교체
                 break;
+            case PuzzleType.TapMatch:
+                _board = new TapMatchPuzzleBoard();
+                break;
             default:
                 _board = new ThreeMatchPuzzleBoard();
                 break;

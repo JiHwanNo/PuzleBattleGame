@@ -159,7 +159,9 @@ namespace Puzzle.Core
         /// <summary> 3매치 방식 </summary>
         ThreeMatch = 1,
         /// <summary> 선 긋기 방식 </summary>
-        Link = 2
+        Link = 2,
+        /// <summary> 터치 매치(콜랩스) 방식 </summary>
+        TapMatch = 3
     }
 
     /// <summary> 보드 타일의 기하학적 모양 </summary>

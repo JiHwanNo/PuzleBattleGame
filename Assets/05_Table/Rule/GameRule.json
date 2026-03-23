@@ -4,8 +4,8 @@
     {
       "_comment": "사각형 3매치 기본 룰 설정",
       "ruleId": "ThreeMatch_Quadrangle",
-      "puzzleType": 1,
-      "_puzzleType_info": "1: ThreeMatch, 2: Link",
+      "puzzleType": 3,
+      "_puzzleType_info": "1: ThreeMatch, 2: Link, 3: TapMatch",
       "boardShape": 1,
       "_boardShape_info": "1: Quadrangle, 2: Hexagon",
       "objectives": [

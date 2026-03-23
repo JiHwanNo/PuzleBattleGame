@@ -1,0 +1,331 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Puzzle.Core
+{
+    /// <summary>
+    /// 터치 매치(Tap to Blast) 방식의 보드 로직입니다.
+    /// 스와이프 없이 터치 시 인접한 같은 색 블럭을 모두 찾아 2개 이상일 때 파괴합니다.
+    /// </summary>
+    public class TapMatchPuzzleBoard : IPuzzleBoard
+    {
+        public BoardState State { get; private set; } = BoardState.Waiting;
+        public PuzzleRandom Random { get; private set; }
+        public ObjectiveManager Objective { get; private set; }
+        public Dictionary<GridPos, PuzzleCell> Cells { get; private set; }
+        public int Width { get; private set; }
+        public int Height { get; private set; }
+
+        private PuzzleBlockFactory _blockFactory;
+        private Queue<GridPos> _inputQueue = new Queue<GridPos>();
+        private List<BoardViewAction> _views = new List<BoardViewAction>();
+        private List<InputRecord> _recordedInputs = new List<InputRecord>();
+        private ulong _frameCount;
+        internal GameSpec gameSpec;
+        private uint _currentOrderIndex = 0;
+
+        public void Initialize(GameSpec spec)
+        {
+            _blockFactory = new PuzzleBlockFactory();
+            _inputQueue = new Queue<GridPos>();
+            Cells = new Dictionary<GridPos, PuzzleCell>();
+            _views = new List<BoardViewAction>();
+            _recordedInputs = new List<InputRecord>();
+            _frameCount = 0;
+            _currentOrderIndex = 0;
+            gameSpec = spec;
+            Random = new PuzzleRandom(0);
+            Objective = new ObjectiveManager(gameSpec?.rule.objectives);
+
+            if (gameSpec?.stageData != null)
+            {
+                Width = gameSpec.stageData.stage_width;
+                Height = gameSpec.stageData.stage_height;
+                foreach (var cellData in gameSpec.stageData.cells)
+                {
+                    GridPos pos = new GridPos(cellData.x, cellData.y);
+                    PuzzleCell cell = new PuzzleCell(pos)
+                    {
+                        CellType = (CellType)cellData.cell_type
+                    };
+
+                    if (cell.CellType == CellType.Generator && cellData.generator_block_ids != null)
+                    {
+                        cell.generatorBlockIds.AddRange(cellData.generator_block_ids);
+                    }
+
+                    if (!string.IsNullOrEmpty(cellData.block_id))
+                    {
+                        BlockData bData = gameSpec.GetBlock(cellData.block_id);
+                        if (bData != null)
+                        {
+                            cell.Block = _blockFactory.Create(bData);
+                        }
+                    }
+                    Cells[pos] = cell;
+                }
+            }
+
+            // 탭 매치는 시작 시 별도의 매칭 체크 없이 대기 상태로 시작합니다.
+            State = BoardState.Waiting;
+        }
+
+        public void Input(GridPos input)
+        {
+            if (State != BoardState.Waiting)
+            {
+                return;
+            }
+
+            if (_inputQueue.Count > 0 && _inputQueue.Last() == input)
+            {
+                return;
+            }
+
+            _inputQueue.Enqueue(input);
+            _recordedInputs.Add(new InputRecord(_frameCount, input));
+            
+            var cell = GetCell(input);
+            if (cell?.Block != null)
+            {
+                // 클릭 피드백
+                cell.Block.SetState(BlockState.Selected);
+            }
+        }
+
+        public bool InputEnd()
+        {
+            if (State != BoardState.Waiting || _inputQueue.Count == 0)
+            {
+                _inputQueue.Clear();
+                return false;
+            }
+
+            GridPos targetPos = _inputQueue.Dequeue();
+            _inputQueue.Clear(); // 탭 매치는 첫 클릭 위치만 사용
+
+            var cell = GetCell(targetPos);
+            if (cell?.Block == null)
+            {
+                return false;
+            }
+
+            cell.Block.SetState(BlockState.Idle); // 선택 피드백 취소
+
+            string targetId = cell.Block.GetBlockId();
+            var matched = GetConnectedBlocks(targetPos, targetId);
+
+            // 툰 블라스트 룰: 2개 이상일 때만 파괴 가능
+            if (matched.Count >= 2)
+            {
+                uint burstOrder = _currentOrderIndex++;
+                foreach (var pos in matched)
+                {
+                    var mCell = GetCell(pos);
+                    if (mCell?.Block != null)
+                    {
+                        mCell.Block.SetState(BlockState.Matched);
+                        Objective.OnBlockDestroyed(mCell.Block.GetBlockId());
+                        mCell.Block = null;
+
+                        AddView(new BoardViewAction
+                        {
+                            type = ViewType.Destroy,
+                            frame = (uint)_frameCount,
+                            position = pos
+                        }, burstOrder);
+                    }
+                }
+
+                State = BoardState.Falling;
+                return true;
+            }
+            else
+            {
+                // 블럭 1개만 클릭했을 때는 파괴되지 않음
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Flood Fill 알고리즘을 사용하여 인접한 동일 블럭들을 모두 찾습니다.
+        /// </summary>
+        private HashSet<GridPos> GetConnectedBlocks(GridPos start, string targetId)
+        {
+            HashSet<GridPos> matched = new HashSet<GridPos>();
+            Queue<GridPos> queue = new Queue<GridPos>();
+
+            queue.Enqueue(start);
+            matched.Add(start);
+
+            GridPos[] dirs = { GridPos.Up, GridPos.Down, GridPos.Left, GridPos.Right };
+
+            while (queue.Count > 0)
+            {
+                GridPos curr = queue.Dequeue();
+
+                foreach (var dir in dirs)
+                {
+                    GridPos next = curr + dir;
+                    if (!matched.Contains(next))
+                    {
+                        var nextCell = GetCell(next);
+                        if (nextCell?.Block != null && nextCell.Block.GetBlockId() == targetId)
+                        {
+                            matched.Add(next);
+                            queue.Enqueue(next);
+                        }
+                    }
+                }
+            }
+
+            return matched;
+        }
+
+        public void Update()
+        {
+            foreach (var cell in Cells.Values)
+            {
+                cell.Update(this);
+            }
+
+            if (Objective != null && Objective.IsAllObjectivesCleared())
+            {
+                State = BoardState.Finish;
+                return;
+            }
+
+            switch (State)
+            {
+                case BoardState.Waiting:
+                    break;
+
+                case BoardState.Falling:
+                    ProcessFallingAndFilling();
+                    
+                    // 탭 매치에서는 연쇄 폭발(Cascade) 없이 바로 대기 상태로 돌아감
+                    State = BoardState.Waiting;
+                    _currentOrderIndex = 0;
+
+                    foreach (var cell in Cells.Values)
+                    {
+                        cell.Block?.SetState(BlockState.Idle);
+                    }
+                    break;
+            }
+        }
+
+        public void FixedUpdate()
+        {
+            _frameCount++;
+        }
+
+        private void ProcessFallingAndFilling()
+        {
+            bool anyChanged = false;
+            uint fallOrder = _currentOrderIndex++;
+
+            for (int x = 0; x < Width; x++)
+            {
+                int writeY = 0;
+                for (int y = 0; y < Height; y++)
+                {
+                    var cell = GetCell(new GridPos(x, y));
+                    if (cell == null) continue;
+
+                    if (cell.CellType == CellType.Close || cell.CellType == CellType.Lock)
+                    {
+                        writeY = y + 1;
+                        continue;
+                    }
+
+                    if (cell.Block != null)
+                    {
+                        if (writeY != y)
+                        {
+                            var targetCell = GetCell(new GridPos(x, writeY));
+                            if (targetCell != null)
+                            {
+                                BaseBlock movingBlock = cell.Block;
+                                cell.Block = null;
+                                targetCell.Block = movingBlock;
+                                targetCell.Block.SetState(BlockState.Falling);
+
+                                AddView(new BoardViewAction
+                                {
+                                    type = ViewType.Fall,
+                                    frame = (uint)_frameCount,
+                                    position = new GridPos(x, y),
+                                    targetPosition = new GridPos(x, writeY)
+                                }, fallOrder);
+
+                                anyChanged = true;
+                            }
+                        }
+                        writeY++;
+                    }
+                }
+
+                PuzzleCell generator = null;
+                for (int y = Height - 1; y >= 0; y--)
+                {
+                    var c = GetCell(new GridPos(x, y));
+                    if (c?.CellType == CellType.Generator) { generator = c; break; }
+                }
+
+                if (generator != null)
+                {
+                    int spawnSeq = 0;
+                    for (int y = 0; y < Height; y++)
+                    {
+                        var cell = GetCell(new GridPos(x, y));
+                        if (cell != null && cell.Block == null && 
+                            (cell.CellType == CellType.Normal || cell.CellType == CellType.Generator))
+                        {
+                            cell.Block = generator.GenerateBlock(gameSpec, Random, _blockFactory);
+                            if (cell.Block != null)
+                            {
+                                cell.Block.SetState(BlockState.Falling);
+                                
+                                GridPos spawnPos = new GridPos(x, Height + spawnSeq);
+                                spawnSeq++;
+
+                                AddView(new BoardViewAction
+                                {
+                                    type = ViewType.CreateAndFall,
+                                    frame = (uint)_frameCount,
+                                    position = spawnPos,
+                                    targetPosition = new GridPos(x, y),
+                                    blockData = cell.Block
+                                }, fallOrder);
+
+                                anyChanged = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!anyChanged) _currentOrderIndex--;
+        }
+
+        public void Pause(bool pause) { }
+        public List<InputRecord> GetRecordedInputs() => new List<InputRecord>(_recordedInputs);
+
+        public List<BoardViewAction> FetchActions()
+        {
+            var res = _views.OrderBy(v => v.frame).ThenBy(v => v.orderIndex).ToList();
+            _views.Clear();
+            return res;
+        }
+
+        public void AddView(BoardViewAction view, uint? customOrder = null)
+        {
+            view.orderIndex = customOrder ?? _currentOrderIndex++;
+            _views.Add(view);
+        }
+
+        public PuzzleCell GetCell(GridPos pos) => Cells.TryGetValue(pos, out var c) ? c : null;
+    }
+}
