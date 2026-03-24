@@ -267,6 +267,8 @@ namespace Puzzle.Core
                         {
                             cell.Block?.SetState(BlockState.Idle);
                         }
+
+                        CheckAndShuffleIfNoMoves();
                     }
                     break;
 
@@ -526,6 +528,125 @@ namespace Puzzle.Core
             AddView(new BoardViewAction { type = ViewType.Move, frame = (uint)_frameCount, position = b, targetPosition = a }, order);
         }
 
-        
+        private void SwapBlocksDataOnly(GridPos a, GridPos b)
+        {
+            var ca = GetCell(a);
+            var cb = GetCell(b);
+            if (ca == null || cb == null) return;
+
+            var t = ca.Block;
+            ca.Block = cb.Block;
+            cb.Block = t;
+        }
+
+        private bool HasPossibleMoves()
+        {
+            for (int y = 0; y < Height; y++)
+            {
+                for (int x = 0; x < Width; x++)
+                {
+                    GridPos current = new GridPos(x, y);
+                    var cell = GetCell(current);
+                    if (cell?.Block == null || (cell.CellType != CellType.Normal && cell.CellType != CellType.Generator)) continue;
+
+                    // 오른쪽 스왑 체크
+                    if (x < Width - 1)
+                    {
+                        GridPos right = new GridPos(x + 1, y);
+                        var rCell = GetCell(right);
+                        if (rCell?.Block != null && (rCell.CellType == CellType.Normal || rCell.CellType == CellType.Generator))
+                        {
+                            SwapBlocksDataOnly(current, right);
+                            bool hasMatch = FindMatches().Count > 0;
+                            SwapBlocksDataOnly(current, right);
+                            if (hasMatch) return true;
+                        }
+                    }
+
+                    // 위쪽 스왑 체크
+                    if (y < Height - 1)
+                    {
+                        GridPos up = new GridPos(x, y + 1);
+                        var uCell = GetCell(up);
+                        if (uCell?.Block != null && (uCell.CellType == CellType.Normal || uCell.CellType == CellType.Generator))
+                        {
+                            SwapBlocksDataOnly(current, up);
+                            bool hasMatch = FindMatches().Count > 0;
+                            SwapBlocksDataOnly(current, up);
+                            if (hasMatch) return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        private void CheckAndShuffleIfNoMoves()
+        {
+            if (HasPossibleMoves()) return;
+
+            List<BaseBlock> blocks = new List<BaseBlock>();
+            List<GridPos> positions = new List<GridPos>();
+
+            for (int y = 0; y < Height; y++)
+            {
+                for (int x = 0; x < Width; x++)
+                {
+                    var cell = GetCell(new GridPos(x, y));
+                    if (cell?.Block != null && (cell.CellType == CellType.Normal || cell.CellType == CellType.Generator))
+                    {
+                        blocks.Add(cell.Block);
+                        positions.Add(new GridPos(x, y));
+                    }
+                }
+            }
+
+            if (blocks.Count == 0) return;
+
+            int maxAttempts = 100;
+            bool success = false;
+
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                for (int i = blocks.Count - 1; i > 0; i--)
+                {
+                    int j = Random.Next(0, i + 1);
+                    var temp = blocks[i];
+                    blocks[i] = blocks[j];
+                    blocks[j] = temp;
+                }
+
+                for (int i = 0; i < positions.Count; i++)
+                {
+                    GetCell(positions[i]).Block = blocks[i];
+                }
+
+                // 당장 매칭은 없지만 다음 턴에 매칭 가능한 스왑은 있는 상태
+                if (FindMatches().Count == 0 && HasPossibleMoves())
+                {
+                    success = true;
+                    break;
+                }
+            }
+
+            if (success)
+            {
+                uint shuffleOrder = _currentOrderIndex++;
+                foreach (var pos in positions)
+                {
+                    var cell = GetCell(pos);
+                    if (cell?.Block != null)
+                    {
+                        AddView(new BoardViewAction
+                        {
+                            type = ViewType.Create,
+                            frame = (uint)_frameCount,
+                            position = pos,
+                            blockData = cell.Block
+                        }, shuffleOrder);
+                    }
+                }
+            }
+        }
     }
 }

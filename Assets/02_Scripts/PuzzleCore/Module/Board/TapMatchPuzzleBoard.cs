@@ -98,11 +98,22 @@ namespace Puzzle.Core
         {
             if (State != BoardState.Waiting || _inputQueue.Count == 0)
             {
+                foreach (var pos in _inputQueue)
+                {
+                    var c = GetCell(pos);
+                    c?.Block?.SetState(BlockState.Idle);
+                }
                 _inputQueue.Clear();
                 return false;
             }
 
             GridPos targetPos = _inputQueue.Dequeue();
+            
+            foreach (var pos in _inputQueue)
+            {
+                var c = GetCell(pos);
+                c?.Block?.SetState(BlockState.Idle);
+            }
             _inputQueue.Clear(); // 탭 매치는 첫 클릭 위치만 사용
 
             var cell = GetCell(targetPos);
@@ -212,6 +223,8 @@ namespace Puzzle.Core
                     {
                         cell.Block?.SetState(BlockState.Idle);
                     }
+
+                    CheckAndShuffleIfNoMoves();
                     break;
             }
         }
@@ -327,5 +340,95 @@ namespace Puzzle.Core
         }
 
         public PuzzleCell GetCell(GridPos pos) => Cells.TryGetValue(pos, out var c) ? c : null;
+
+        private string GetBlockIdAt(GridPos pos)
+        {
+            var cell = GetCell(pos);
+            bool isMatchable = cell?.Block != null && (cell.CellType == CellType.Normal || cell.CellType == CellType.Generator);
+            return isMatchable ? cell.Block.GetBlockId() : null;
+        }
+
+        private bool HasPossibleMoves()
+        {
+            for (int y = 0; y < Height; y++)
+            {
+                for (int x = 0; x < Width; x++)
+                {
+                    string id = GetBlockIdAt(new GridPos(x, y));
+                    if (id == null) continue;
+
+                    if (x < Width - 1 && id == GetBlockIdAt(new GridPos(x + 1, y))) return true;
+                    if (y < Height - 1 && id == GetBlockIdAt(new GridPos(x, y + 1))) return true;
+                }
+            }
+            return false;
+        }
+
+        private void CheckAndShuffleIfNoMoves()
+        {
+            if (HasPossibleMoves()) return;
+
+            List<BaseBlock> blocks = new List<BaseBlock>();
+            List<GridPos> positions = new List<GridPos>();
+
+            for (int y = 0; y < Height; y++)
+            {
+                for (int x = 0; x < Width; x++)
+                {
+                    var cell = GetCell(new GridPos(x, y));
+                    if (cell?.Block != null && (cell.CellType == CellType.Normal || cell.CellType == CellType.Generator))
+                    {
+                        blocks.Add(cell.Block);
+                        positions.Add(new GridPos(x, y));
+                    }
+                }
+            }
+
+            if (blocks.Count == 0) return;
+
+            int maxAttempts = 100;
+            bool success = false;
+
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                for (int i = blocks.Count - 1; i > 0; i--)
+                {
+                    int j = Random.Next(0, i + 1);
+                    var temp = blocks[i];
+                    blocks[i] = blocks[j];
+                    blocks[j] = temp;
+                }
+
+                for (int i = 0; i < positions.Count; i++)
+                {
+                    GetCell(positions[i]).Block = blocks[i];
+                }
+
+                if (HasPossibleMoves())
+                {
+                    success = true;
+                    break;
+                }
+            }
+
+            if (success)
+            {
+                uint shuffleOrder = _currentOrderIndex++;
+                foreach (var pos in positions)
+                {
+                    var cell = GetCell(pos);
+                    if (cell?.Block != null)
+                    {
+                        AddView(new BoardViewAction
+                        {
+                            type = ViewType.Create,
+                            frame = (uint)_frameCount,
+                            position = pos,
+                            blockData = cell.Block
+                        }, shuffleOrder);
+                    }
+                }
+            }
+        }
     }
 }

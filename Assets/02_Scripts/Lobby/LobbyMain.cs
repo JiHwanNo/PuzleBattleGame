@@ -1,3 +1,4 @@
+using Puzzle.Core;
 using UnityEngine;
 
 /// <summary>
@@ -24,7 +25,10 @@ public class LobbyMain : MonoBehaviour
 
         StageInjection.Instance.MakeGameSpec(rulePath, stagePath);
         
-        if (StageInjection.Instance.GetGameSpec() != null)
+        GameSpec spec = StageInjection.Instance.GetGameSpec();
+        if (spec != null && 
+                string.IsNullOrEmpty(spec.rule.ruleId) == false && 
+                    spec.stageData != null)
         {
             Main.Instance.MoveScene(Main.Scene.GameScene);
         }
