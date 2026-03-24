@@ -19,8 +19,8 @@ public class LobbyMain : MonoBehaviour
     /// </summary>
     public void OnClickStartStage()
     {
-        string rulePath = "ThreeMatchRule.json";
-        string stagePath = "Stage.json";
+        string rulePath = "TapMatchRule";
+        string stagePath = "Stage";
 
         StageInjection.Instance.MakeGameSpec(rulePath, stagePath);
         

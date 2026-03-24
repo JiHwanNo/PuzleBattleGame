@@ -16,12 +16,17 @@ MonoBehaviour:
   m_GUID: 0abeb8d0b8f97d242b46ae45992619b3
   m_SerializeEntries:
   - m_GUID: 1015346fa46158c419b3fab20509aae8
-    m_Address: Stage.json
+    m_Address: Stage
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 296538ef62532ac4e93c1bab5a6be856
-    m_Address: GameRule.json
+    m_Address: ThreeMatchRule
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: d181bb52f8a6cff4889d32779d9faacc
+    m_Address: TapMatchRule
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
