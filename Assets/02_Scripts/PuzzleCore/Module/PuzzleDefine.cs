@@ -101,6 +101,8 @@ namespace Puzzle.Core
         public PuzzleType puzzleType;
         /// <summary> 보드 타일 모양 </summary>
         public BoardShape boardShape;
+        /// <summary> 스테이지 제한 시간 (초 단위, 0이면 무제한) </summary>
+        public float timeLimit;
         /// <summary> 스테이지 클리어 목표 목록 </summary>
         public List<ObjectiveData> objectives;
     }

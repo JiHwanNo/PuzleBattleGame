@@ -78,7 +78,7 @@ namespace Puzzle.Core
             _currentOrderIndex = 0;
             gameSpec = spec;
             Random = new PuzzleRandom(0);
-            Objective = new ObjectiveManager(gameSpec?.rule.objectives);
+            Objective = new ObjectiveManager(gameSpec?.rule.objectives, gameSpec?.rule.timeLimit ?? 0);
 
             if (gameSpec?.stageData != null)
             {
@@ -242,7 +242,7 @@ namespace Puzzle.Core
                 cell.Update(this);
             }
 
-            if (Objective != null && Objective.IsAllObjectivesCleared())
+            if (Objective != null && (Objective.IsAllObjectivesCleared() || Objective.IsTimeOver()))
             {
                 State = BoardState.Finish;
                 return;
@@ -296,6 +296,8 @@ namespace Puzzle.Core
         public void FixedUpdate()
         {
             _frameCount++;
+            bool isWaiting = (State == BoardState.Waiting);
+            Objective?.UpdateTimer(isWaiting);
         }
 
         private bool HasEmptyCell()
@@ -310,6 +312,8 @@ namespace Puzzle.Core
             {
                 return false;
             }
+
+            Objective?.OnMatchEvent();
 
             // 이번 매칭 시퀀스의 터지는 연출을 하나의 그룹으로 묶음
             uint burstOrder = _currentOrderIndex++;

@@ -36,7 +36,7 @@ namespace Puzzle.Core
             _currentOrderIndex = 0;
             gameSpec = spec;
             Random = new PuzzleRandom(0);
-            Objective = new ObjectiveManager(gameSpec?.rule.objectives);
+            Objective = new ObjectiveManager(gameSpec?.rule.objectives, gameSpec?.rule.timeLimit ?? 0);
 
             if (gameSpec?.stageData != null)
             {
@@ -130,6 +130,8 @@ namespace Puzzle.Core
             // 툰 블라스트 룰: 2개 이상일 때만 파괴 가능
             if (matched.Count >= 2)
             {
+                Objective?.OnMatchEvent(); // 콤보 증가 및 갱신
+
                 uint burstOrder = _currentOrderIndex++;
                 foreach (var pos in matched)
                 {
@@ -201,7 +203,7 @@ namespace Puzzle.Core
                 cell.Update(this);
             }
 
-            if (Objective != null && Objective.IsAllObjectivesCleared())
+            if (Objective != null && (Objective.IsAllObjectivesCleared() || Objective.IsTimeOver()))
             {
                 State = BoardState.Finish;
                 return;
@@ -232,6 +234,8 @@ namespace Puzzle.Core
         public void FixedUpdate()
         {
             _frameCount++;
+            bool isWaiting = (State == BoardState.Waiting);
+            Objective?.UpdateTimer(isWaiting);
         }
 
         private void ProcessFallingAndFilling()
