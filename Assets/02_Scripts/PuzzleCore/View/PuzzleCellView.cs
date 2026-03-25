@@ -46,65 +46,72 @@ public class PuzzleCellView : MonoBehaviour
 
         UpdateVisual();
     }
-/// <summary>
-/// 셀의 상태에 따라 시각적 요소(Sprite 등)를 업데이트합니다.
-/// 육각형(Hexagon) 보드인 경우 육각형 전용 스프라이트를 로드합니다.
-/// </summary>
-public void UpdateVisual()
-{
-    if (_cellData == null)
-    {
-        return;
-    }
 
-    if (_spriteRenderer == null)
+    /// <summary>
+    /// 셀의 상태에 따라 시각적 요소(Sprite 등)를 업데이트합니다.
+    /// 육각형(Hexagon) 보드인 경우 육각형 전용 스프라이트를 로드합니다.
+    /// </summary>
+    public void UpdateVisual()
     {
-        _spriteRenderer = GetComponent<SpriteRenderer>();
-    }
-
-    if (_spriteRenderer != null)
-    {
-        switch (_cellData.CellType)
+        if (_cellData == null)
         {
-            case CellType.Normal:
-                _spriteRenderer.gameObject.SetActive(true);
+            return;
+        }
 
-                // 게임 사양(GameSpec)을 확인하여 보드 모양에 맞는 스프라이트 로드
-                GameSpec spec = StageInjection.Instance.GetGameSpec();
-                if (spec != null)
-                {
-                    string spriteAddress = spec.rule.boardShape == BoardShape.Hexagon ? "hexagonCell" : "squareCell";
+        if (_spriteRenderer == null)
+        {
+            _spriteRenderer = GetComponent<SpriteRenderer>();
+        }
+
+        if (_spriteRenderer != null)
+        {
+            switch (_cellData.CellType)
+            {
+                case CellType.Normal:
+                case CellType.Generator:
+                    _spriteRenderer.gameObject.SetActive(true);
+
+                    // 게임 사양(GameSpec)을 확인하여 보드 모양에 맞는 스프라이트 로드
+                    GameSpec spec = StageInjection.Instance.GetGameSpec();
+                    if (spec != null)
+                    {
+                        string spriteAddress = spec.rule.boardShape == BoardShape.Hexagon ? "hexagonCell" : "squareCell";
 
                         // Addressables 비동기 로드를 통해 스프라이트 교체
-                        AssetManager.Instance.LoadAssetAsync<Sprite>(new AssetManager.AssetArguments<Sprite>() { address = spriteAddress , successCallback =  (sprite) =>
-                        {
-                            if (_spriteRenderer != null && sprite != null)
+                        AssetManager.Instance.LoadAssetAsync<Sprite>(new AssetManager.AssetArguments<Sprite>() 
+                        { 
+                            address = spriteAddress, 
+                            successCallback = (sprite) =>
                             {
-                                _spriteRenderer.sprite = sprite;
-
-                                // 스프라이트 변경 후 콜라이더 크기 재조정
-                                if (_boxCollider != null)
+                                if (_spriteRenderer != null && sprite != null)
                                 {
-                                    _boxCollider.AdjustColliderSize();
+                                    _spriteRenderer.sprite = sprite;
+
+                                    // 스프라이트 변경 후 콜라이더 크기 재조정
+                                    if (_boxCollider != null)
+                                    {
+                                        _boxCollider.AdjustColliderSize();
+                                    }
                                 }
                             }
-                        }});
-                }
-                else
-                {
-                    if (_boxCollider != null)
-                    {
-                        _boxCollider.AdjustColliderSize();
+                        });
                     }
-                }
-                break;
+                    else
+                    {
+                        if (_boxCollider != null)
+                        {
+                            _boxCollider.AdjustColliderSize();
+                        }
+                    }
+                    break;
 
-            case CellType.Close:
-                _spriteRenderer.gameObject.SetActive(false);
-                break;
+                case CellType.Close:
+                    _spriteRenderer.gameObject.SetActive(false);
+                    break;
+            }
         }
     }
-}
+
     /// <summary>
     /// 보드 뷰 등에 의해 이 셀이 클릭되었다고 판정되었을 때 호출됩니다.
     /// </summary>
@@ -115,7 +122,8 @@ public void UpdateVisual()
             return;
         }
 
-        if (_cellData.CellType == CellType.Normal)
+        // Generator이거나 Normal일 때 입력을 받도록 수정 (링크 연결 시작 지점으로 Generator 포함 가능성)
+        if (_cellData.CellType == CellType.Normal || _cellData.CellType == CellType.Generator)
         {
             _boardView.OnBlockInput(_gridPos);
         }

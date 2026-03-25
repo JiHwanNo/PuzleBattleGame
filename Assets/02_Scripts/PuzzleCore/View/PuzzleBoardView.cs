@@ -366,6 +366,8 @@ public class PuzzleBoardView : MonoBehaviour
                 for (int i = 0; i < path.Count; i++)
                 {
                     Vector3 localPos = GetLocalPos(path[i]);
+                    // 선이 블럭이나 타일에 가려지지 않도록 Z축으로 살짝 앞으로 뺍니다.
+                    localPos.z = -1f; 
                     Vector3 worldPos = this.transform.TransformPoint(localPos);
                     _lineRenderer.SetPosition(i, worldPos);
                 }
