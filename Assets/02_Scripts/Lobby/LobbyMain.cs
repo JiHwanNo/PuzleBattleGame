@@ -20,7 +20,7 @@ public class LobbyMain : MonoBehaviour
     /// </summary>
     public void OnClickStartStage()
     {
-        string rulePath = "TapMatchRule";
+        string rulePath = "LinkMatchRule";
         string stagePath = "Stage";
 
         StageInjection.Instance.MakeGameSpec(rulePath, stagePath);

@@ -31,6 +31,45 @@ namespace Puzzle.Core
         public static readonly GridPos DownRight = new GridPos(1, -1);
         public static readonly GridPos DownLeft = new GridPos(-1, -1);
 
+        /// <summary>
+        /// 일반 사각형 그리드에서 두 좌표가 상하좌우로 인접해 있는지 확인합니다.
+        /// </summary>
+        public static bool IsAdjacentSquare(GridPos a, GridPos b)
+        {
+            int dx = Math.Abs(a.X - b.X);
+            int dy = Math.Abs(a.Y - b.Y);
+            return (dx == 1 && dy == 0) || (dx == 0 && dy == 1);
+        }
+
+        /// <summary>
+        /// Flat-Top(Even-Q) 육각형 그리드에서 두 좌표가 6방향으로 인접해 있는지 확인합니다.
+        /// 짝수 열(Column)이 반 칸 아래로 내려가 있는 형태를 기준으로 합니다.
+        /// </summary>
+        public static bool IsAdjacentHexagon(GridPos a, GridPos b)
+        {
+            int dx = b.X - a.X;
+            int dy = b.Y - a.Y;
+
+            if (dx == 0) // 같은 열(위, 아래)
+            {
+                return Math.Abs(dy) == 1;
+            }
+            else if (Math.Abs(dx) == 1) // 인접한 열 (좌상, 좌하, 우상, 우하)
+            {
+                if (a.X % 2 == 0)
+                {
+                    // 짝수 열: 인접 열의 이웃은 Y좌표가 같거나 1 작습니다.
+                    return dy == 0 || dy == -1;
+                }
+                else
+                {
+                    // 홀수 열: 인접 열의 이웃은 Y좌표가 1 크거나 같습니다.
+                    return dy == 1 || dy == 0;
+                }
+            }
+            return false;
+        }
+
         // --- 연산자 오버로딩 ---
         public static GridPos operator +(GridPos a, GridPos b)
         {

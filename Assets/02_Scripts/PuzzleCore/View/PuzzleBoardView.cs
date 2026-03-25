@@ -61,6 +61,9 @@ public class PuzzleBoardView : MonoBehaviour
     /// <summary> 현재 연출이 진행 중인지 여부 </summary>
     private bool _isAnimating = false;
 
+    /// <summary> 드래그 연결 궤적을 표시하는 라인 렌더러 </summary>
+    private LineRenderer _lineRenderer;
+
     /// <summary> 현재 보드가 애니메이션 연출 중인지 여부를 반환합니다. </summary>
     public bool IsAnimating => _isAnimating;
 
@@ -140,6 +143,7 @@ public class PuzzleBoardView : MonoBehaviour
         }
 
         ClearBoard();
+        SetupLineRenderer();
 
         if (cellRoot == null)
         {
@@ -166,6 +170,25 @@ public class PuzzleBoardView : MonoBehaviour
         AlignBoardToCenter();
     }
 
+    private void SetupLineRenderer()
+    {
+        if (_lineRenderer == null)
+        {
+            GameObject lineObj = new GameObject("LinkLine");
+            lineObj.transform.SetParent(this.transform);
+            _lineRenderer = lineObj.AddComponent<LineRenderer>();
+            _lineRenderer.startWidth = 0.15f;
+            _lineRenderer.endWidth = 0.15f;
+            _lineRenderer.positionCount = 0;
+            _lineRenderer.useWorldSpace = true;
+            _lineRenderer.sortingOrder = 10;
+            _lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+            _lineRenderer.startColor = new Color(1f, 1f, 1f, 0.8f);
+            _lineRenderer.endColor = new Color(1f, 1f, 1f, 0.8f);
+        }
+        _lineRenderer.positionCount = 0;
+    }
+
     public Vector3 GetLocalPos(GridPos pos)
     {
         if (_board == null)
@@ -176,7 +199,20 @@ public class PuzzleBoardView : MonoBehaviour
         float offsetX = (_board.Width - 1) * cellSize / 2f;
         float offsetY = (_board.Height - 1) * cellSize / 2f;
 
-        return new Vector3(pos.X * cellSize - offsetX, pos.Y * cellSize - offsetY, 0);
+        float xPos = pos.X * cellSize - offsetX;
+        float yPos = pos.Y * cellSize - offsetY;
+
+        // 육각형(Hexagon) 오프셋 처리 (Even-Q Flat-Top)
+        GameSpec spec = StageInjection.Instance.GetGameSpec();
+        if (spec != null && spec.rule.boardShape == BoardShape.Hexagon)
+        {
+            if (pos.X % 2 == 0)
+            {
+                yPos -= cellSize * 0.5f; // 짝수 열은 반 칸 아래로 배치
+            }
+        }
+
+        return new Vector3(xPos, yPos, 0);
     }
 
     private void AlignBoardToCenter()
@@ -233,6 +269,11 @@ public class PuzzleBoardView : MonoBehaviour
         _blockViews.Clear();
         _actionQueue.Clear();
         _isAnimating = false;
+
+        if (_lineRenderer != null)
+        {
+            _lineRenderer.positionCount = 0;
+        }
     }
 
     private void CreateCellView(GridPos gridPos, PuzzleCell cellData)
@@ -282,6 +323,8 @@ public class PuzzleBoardView : MonoBehaviour
             return;
         }
 
+        UpdateLineRenderer();
+
         foreach (var kvp in _blockViews)
         {
             if (kvp.Value != null)
@@ -293,7 +336,6 @@ public class PuzzleBoardView : MonoBehaviour
         List<BoardViewAction> actions = _board.FetchActions();
         if (actions != null && actions.Count > 0)
         {
-            // 🔥 수정: 프레임과 orderIndex가 같은 액션들을 하나의 그룹으로 묶어 일괄(Batch) 처리하도록 큐에 넣습니다.
             var groupedActions = actions
                 .GroupBy(a => new { a.frame, a.orderIndex })
                 .OrderBy(g => g.Key.frame)
@@ -308,6 +350,34 @@ public class PuzzleBoardView : MonoBehaviour
         if (!_isAnimating && _actionQueue.Count > 0)
         {
             StartCoroutine(ProcessActionQueue());
+        }
+    }
+
+    private void UpdateLineRenderer()
+    {
+        if (_lineRenderer == null) return;
+
+        if (_board is LinkPuzzleBoard linkBoard)
+        {
+            var path = linkBoard.GetCurrentLinkPath();
+            if (path != null && path.Count > 0)
+            {
+                _lineRenderer.positionCount = path.Count;
+                for (int i = 0; i < path.Count; i++)
+                {
+                    Vector3 localPos = GetLocalPos(path[i]);
+                    Vector3 worldPos = this.transform.TransformPoint(localPos);
+                    _lineRenderer.SetPosition(i, worldPos);
+                }
+            }
+            else
+            {
+                _lineRenderer.positionCount = 0;
+            }
+        }
+        else
+        {
+            _lineRenderer.positionCount = 0;
         }
     }
 
@@ -353,7 +423,6 @@ public class PuzzleBoardView : MonoBehaviour
         int completedCount = 0;
         int totalCount = moveActions.Count;
 
-        // 1단계: 이동하거나 새로 생성될 뷰들을 임시 저장소에 모으고, 기존 위치에서 제거 (충돌 방지)
         Dictionary<BoardViewAction, PuzzleBlockView> actionToViewMap = new Dictionary<BoardViewAction, PuzzleBlockView>();
         
         foreach (var action in moveActions)
@@ -363,21 +432,20 @@ public class PuzzleBoardView : MonoBehaviour
                 if (_blockViews.TryGetValue(action.position, out PuzzleBlockView view))
                 {
                     actionToViewMap[action] = view;
-                    _blockViews.Remove(action.position); // 기존 자리 비움
+                    _blockViews.Remove(action.position); 
                 }
             }
             else if (action.type == ViewType.CreateAndFall)
             {
                 if (action.blockData != null && _blockPrefabObj != null)
                 {
-                    // 목적지에 이미 블럭이 있다면 미리 제거 (안전 장치)
                     if (_blockViews.ContainsKey(action.targetPosition))
                     {
                         HandleImmediateDestroy(action.targetPosition);
                     }
 
                     GameObject blockObj = PoolManager.Instance.Get(_blockPrefabObj, blockRoot);
-                    blockObj.transform.localPosition = GetLocalPos(action.position); // 화면 밖 시작 위치
+                    blockObj.transform.localPosition = GetLocalPos(action.position); 
                     blockObj.name = $"Block_{action.targetPosition.X}_{action.targetPosition.Y}";
 
                     PuzzleBlockView bView = blockObj.GetComponent<PuzzleBlockView>();
@@ -390,20 +458,18 @@ public class PuzzleBoardView : MonoBehaviour
             }
         }
 
-        // 2단계: 모든 뷰를 새로운 타겟 위치로 한꺼번에 등록하고 애니메이션 시작
         foreach (var pair in actionToViewMap)
         {
             BoardViewAction action = pair.Key;
             PuzzleBlockView view = pair.Value;
             GridPos to = action.targetPosition;
 
-            // 목적지로 블럭 등록
             _blockViews[to] = view;
 
             Vector3 targetPos = GetLocalPos(to);
             System.Action onComplete = () => 
             {
-                view.Initialize(view.GetBlockData(), to, this); // 최종 위치 정보 갱신
+                view.Initialize(view.GetBlockData(), to, this); 
                 completedCount++;
             };
 
@@ -411,13 +477,12 @@ public class PuzzleBoardView : MonoBehaviour
             {
                 view.PlayMoveAnimation(targetPos, onComplete);
             }
-            else // Fall or CreateAndFall
+            else 
             {
                 view.PlayFallAnimation(targetPos, onComplete);
             }
         }
 
-        // 뷰를 찾지 못한 예외적인 액션들에 대한 처리
         int processedCount = actionToViewMap.Count;
         if (processedCount < totalCount)
         {

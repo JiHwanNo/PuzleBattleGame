@@ -15,8 +15,8 @@ public class PuzzleGameController : MonoBehaviour
     /// <summary> 퍼즐 보드의 핵심 로직을 처리하는 모델 인터페이스 </summary>
     private IPuzzleBoard _board;
 
-    /// <summary> 현재 드래그 세션에서 이미 거쳐간 좌표 목록 (중복 입력 방지용) </summary>
-    private HashSet<GridPos> _inputPath = new HashSet<GridPos>();
+    /// <summary> 현재 드래그 중 마지막으로 머문 좌표 (되돌리기 등 경로 재진입 허용을 위해) </summary>
+    private GridPos? _lastHoveredPos = null;
 
     /// <summary> 보드가 정상적으로 초기화되었는지 여부 </summary>
     private bool _isInitialized = false;
@@ -41,7 +41,7 @@ public class PuzzleGameController : MonoBehaviour
                 _board = new ThreeMatchPuzzleBoard();
                 break;
             case PuzzleType.Link:
-                _board = new ThreeMatchPuzzleBoard(); // TODO: Link 전용 보드 구현 시 교체
+                _board = new LinkPuzzleBoard(); // 링크 전용 보드로 연결
                 break;
             case PuzzleType.TapMatch:
                 _board = new TapMatchPuzzleBoard();
@@ -89,11 +89,11 @@ public class PuzzleGameController : MonoBehaviour
                     if (hitCollider.TryGetComponent<PuzzleBlockCollider>(out var blockCollider))
                     {
                         GridPos? pos = GetGridPosFromCollider(hitCollider);
-                        if (pos.HasValue && !_inputPath.Contains(pos.Value))
+                        // 이전에 머물렀던 블럭과 다른 블럭으로 마우스가 이동했을 때만 입력 처리
+                        if (pos.HasValue && pos.Value != _lastHoveredPos)
                         {
-                            _inputPath.Add(pos.Value);
+                            _lastHoveredPos = pos.Value;
                             blockCollider.OnClickBlock();
-
                             break;
                         }
                     }
@@ -105,7 +105,7 @@ public class PuzzleGameController : MonoBehaviour
         if (IsPointerReleased())
         {
             _board.InputEnd();
-            _inputPath.Clear(); // 거쳐간 경로 초기화
+            _lastHoveredPos = null; // 포인터를 떼면 초기화
         }
 
         // 3. 보드 논리 업데이트

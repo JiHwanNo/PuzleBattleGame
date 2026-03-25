@@ -25,6 +25,11 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 33e0ae1a0ee5a1f4985408284fbcb2a7
+    m_Address: LinkMatchRule
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: d181bb52f8a6cff4889d32779d9faacc
     m_Address: TapMatchRule
     m_ReadOnly: 0
