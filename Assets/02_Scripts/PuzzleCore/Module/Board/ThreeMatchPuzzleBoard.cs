@@ -40,6 +40,9 @@ namespace Puzzle.Core
         /// <summary> 유저 입력 좌표 대기열 </summary>
         private Queue<GridPos> _inputQueue = new Queue<GridPos>();
 
+        /// <summary> 마지막으로 큐에 추가된 입력 좌표 (Queue.Last() O(n) 방지) </summary>
+        private GridPos? _lastEnqueuedInput = null;
+
         /// <summary> 화면에 요청할 시각적 연출 액션 리스트 </summary>
         private List<BoardViewAction> _views = new List<BoardViewAction>();
 
@@ -71,6 +74,7 @@ namespace Puzzle.Core
             _blockFactory = new PuzzleBlockFactory();
             _selectedPos = null;
             _inputQueue = new Queue<GridPos>();
+            _lastEnqueuedInput = null;
             Cells = new Dictionary<GridPos, PuzzleCell>();
             _views = new List<BoardViewAction>();
             _recordedInputs = new List<InputRecord>();
@@ -121,12 +125,13 @@ namespace Puzzle.Core
             }
 
             // 중복 입력 방지 (마지막 입력과 같으면 무시)
-            if (_inputQueue.Count > 0 && _inputQueue.Last() == input)
+            if (_lastEnqueuedInput.HasValue && _lastEnqueuedInput.Value == input)
             {
                 return;
             }
 
             _inputQueue.Enqueue(input);
+            _lastEnqueuedInput = input;
             _recordedInputs.Add(new InputRecord(_frameCount, input));
 
             // 개별 블럭 조작 로직 (스테이트 기반)
@@ -150,7 +155,8 @@ namespace Puzzle.Core
                     // 인접 블럭 클릭 시 즉시 스왑 시도 (Tap-Tap Swap 지원)
                     ProcessSwapInput(prev, input);
                     _selectedPos = null;
-                    _inputQueue.Clear(); // 즉시 처리했으므로 대기열 비움
+                    _inputQueue.Clear();
+                    _lastEnqueuedInput = null;
                 }
                 else
                 {
@@ -175,6 +181,7 @@ namespace Puzzle.Core
             if (State != BoardState.Waiting || _inputQueue.Count == 0)
             {
                 _inputQueue.Clear();
+                _lastEnqueuedInput = null;
                 return false;
             }
 
@@ -190,6 +197,7 @@ namespace Puzzle.Core
                 }
             }
             _inputQueue.Clear();
+            _lastEnqueuedInput = null;
 
             if (first != last)
             {
@@ -273,14 +281,8 @@ namespace Puzzle.Core
                     break;
 
                 case BoardState.Falling:
-                    if (ProcessFallingAndFilling())
-                    {
-                        State = BoardState.Matching;
-                    }
-                    else
-                    {
-                        State = BoardState.Matching;
-                    }
+                    ProcessFallingAndFilling();
+                    State = BoardState.Matching;
                     break;
 
                 case BoardState.Filling:

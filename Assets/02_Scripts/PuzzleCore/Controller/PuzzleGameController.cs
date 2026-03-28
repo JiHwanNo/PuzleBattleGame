@@ -21,6 +21,12 @@ public class PuzzleGameController : MonoBehaviour
     /// <summary> 보드가 정상적으로 초기화되었는지 여부 </summary>
     private bool _isInitialized = false;
 
+    /// <summary> 캐싱된 메인 카메라 참조 </summary>
+    private Camera _mainCamera;
+
+    /// <summary> Physics2D.OverlapPoint 결과를 재사용하기 위한 버퍼 </summary>
+    private readonly Collider2D[] _hitBuffer = new Collider2D[16];
+
     /// <summary>
     /// 게임 시작 시 스테이지 데이터를 로드하고 보드를 초기화합니다.
     /// </summary>
@@ -58,6 +64,7 @@ public class PuzzleGameController : MonoBehaviour
             boardView.DrawBoard(_board);
         }
 
+        _mainCamera = Camera.main;
         _isInitialized = true;
     }
 
@@ -78,14 +85,15 @@ public class PuzzleGameController : MonoBehaviour
             if (boardView == null || !boardView.IsAnimating)
             {
                 Vector2 screenPosition = GetPointerPosition();
-                Vector2 worldPosition = Camera.main.ScreenToWorldPoint(screenPosition);
+                Vector2 worldPosition = _mainCamera.ScreenToWorldPoint(screenPosition);
 
-                // 현재 위치 아래의 콜라이더 감지
-                Collider2D[] hitColliders = Physics2D.OverlapPointAll(worldPosition);
+                // 현재 위치 아래의 콜라이더 감지 (사전 할당 버퍼 사용으로 GC 방지)
+                int hitCount = Physics2D.OverlapPointNonAlloc(worldPosition, _hitBuffer);
 
                 // 모든 충돌체를 순회하며 PuzzleBlockCollider를 찾습니다.
-                foreach (var hitCollider in hitColliders)
+                for (int i = 0; i < hitCount; i++)
                 {
+                    var hitCollider = _hitBuffer[i];
                     if (hitCollider.TryGetComponent<PuzzleBlockCollider>(out var blockCollider))
                     {
                         GridPos? pos = GetGridPosFromCollider(hitCollider);

@@ -19,6 +19,8 @@ namespace Puzzle.Core
 
         private PuzzleBlockFactory _blockFactory;
         private Queue<GridPos> _inputQueue = new Queue<GridPos>();
+        /// <summary> 마지막으로 큐에 추가된 입력 좌표 (Queue.Last() O(n) 방지) </summary>
+        private GridPos? _lastEnqueuedInput = null;
         private List<BoardViewAction> _views = new List<BoardViewAction>();
         private List<InputRecord> _recordedInputs = new List<InputRecord>();
         private ulong _frameCount;
@@ -29,6 +31,7 @@ namespace Puzzle.Core
         {
             _blockFactory = new PuzzleBlockFactory();
             _inputQueue = new Queue<GridPos>();
+            _lastEnqueuedInput = null;
             Cells = new Dictionary<GridPos, PuzzleCell>();
             _views = new List<BoardViewAction>();
             _recordedInputs = new List<InputRecord>();
@@ -78,12 +81,13 @@ namespace Puzzle.Core
                 return;
             }
 
-            if (_inputQueue.Count > 0 && _inputQueue.Last() == input)
+            if (_lastEnqueuedInput.HasValue && _lastEnqueuedInput.Value == input)
             {
                 return;
             }
 
             _inputQueue.Enqueue(input);
+            _lastEnqueuedInput = input;
             _recordedInputs.Add(new InputRecord(_frameCount, input));
             
             var cell = GetCell(input);
@@ -104,17 +108,19 @@ namespace Puzzle.Core
                     c?.Block?.SetState(BlockState.Idle);
                 }
                 _inputQueue.Clear();
+                _lastEnqueuedInput = null;
                 return false;
             }
 
             GridPos targetPos = _inputQueue.Dequeue();
-            
+
             foreach (var pos in _inputQueue)
             {
                 var c = GetCell(pos);
                 c?.Block?.SetState(BlockState.Idle);
             }
-            _inputQueue.Clear(); // 탭 매치는 첫 클릭 위치만 사용
+            _inputQueue.Clear();
+            _lastEnqueuedInput = null; // 탭 매치는 첫 클릭 위치만 사용
 
             var cell = GetCell(targetPos);
             if (cell?.Block == null)

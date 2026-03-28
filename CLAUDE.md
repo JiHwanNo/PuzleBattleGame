@@ -80,6 +80,11 @@ TitleScene -> LoadingScene -> LobbyScene -> GameScene (+ PopupScene)
 
 ---
 
+## 렌더링
+- 인게임의 모든 시각 요소(블럭, 셀, 라인 렌더러 등)는 **`Ingame` Sorting Layer**에서 렌더링된다.
+
+---
+
 ## 디버깅 원칙
 - 씬 뷰/GUI 디버그 정보는 모델 데이터보다 **실제 뷰 객체(View Object) 상태**를 우선 반영.
 - 씬 이동/데이터 로드 실패 시 명확한 에러 로그 남길 것.

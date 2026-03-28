@@ -43,6 +43,9 @@ public class PuzzleBoardView : MonoBehaviour
     /// <summary> 현재 연결된 보드 모델 데이터 </summary>
     private IPuzzleBoard _board;
 
+    /// <summary> 캐싱된 보드 모양 (GetLocalPos 최적화용) </summary>
+    private BoardShape _cachedBoardShape = BoardShape.None;
+
     /// <summary> 로드된 셀 프리팹 캐시 </summary>
     private GameObject _cellPrefabObj;
 
@@ -64,10 +67,26 @@ public class PuzzleBoardView : MonoBehaviour
     /// <summary> 드래그 연결 궤적을 표시하는 라인 렌더러 </summary>
     private LineRenderer _lineRenderer;
 
+    /// <summary> LineRenderer에 사용되는 머티리얼 (해제 시 파괴 필요) </summary>
+    private Material _lineMaterial;
+
+    /// <summary> 링크 경로 위 연결 지점 표시용 포인트 오브젝트 풀 </summary>
+    private List<GameObject> _linkPointMarkers = new List<GameObject>();
+
+    /// <summary> 포인트 마커용 프로시저럴 원형 텍스처 </summary>
+    private Texture2D _circleTexture;
+
+    /// <summary> 포인트 마커용 스프라이트 </summary>
+    private Sprite _circleSprite;
+
+
     /// <summary> 현재 보드가 애니메이션 연출 중인지 여부를 반환합니다. </summary>
     public bool IsAnimating => _isAnimating;
 
 #if UNITY_EDITOR
+    /// <summary> 디버그 기즈모용 캐싱된 GUIStyle (매 프레임 할당 방지) </summary>
+    private static GUIStyle _debugStyle;
+
     /// <summary>
     /// 유니티 에디터의 씬 뷰에서 그리드 좌표와 블럭 정보를 텍스트로 표시합니다.
     /// </summary>
@@ -78,10 +97,14 @@ public class PuzzleBoardView : MonoBehaviour
             return;
         }
 
-        GUIStyle style = new GUIStyle();
-        style.normal.textColor = Color.yellow;
-        style.fontSize = 12;
-        style.alignment = TextAnchor.MiddleCenter;
+        if (_debugStyle == null)
+        {
+            _debugStyle = new GUIStyle();
+            _debugStyle.normal.textColor = Color.yellow;
+            _debugStyle.fontSize = 12;
+            _debugStyle.alignment = TextAnchor.MiddleCenter;
+        }
+        GUIStyle style = _debugStyle;
 
         foreach (var kvp in _board.Cells)
         {
@@ -124,10 +147,33 @@ public class PuzzleBoardView : MonoBehaviour
     }
 #endif
 
+    private void OnDestroy()
+    {
+        if (_lineMaterial != null)
+        {
+            Destroy(_lineMaterial);
+            _lineMaterial = null;
+        }
+        if (_circleTexture != null)
+        {
+            Destroy(_circleTexture);
+            _circleTexture = null;
+        }
+        if (_circleSprite != null)
+        {
+            Destroy(_circleSprite);
+            _circleSprite = null;
+        }
+    }
+
     public void DrawBoard(IPuzzleBoard boardData)
     {
         _board = boardData;
-       
+
+        // 보드 모양 캐싱 (GetLocalPos에서 매번 StageInjection 조회 방지)
+        GameSpec spec = StageInjection.Instance.GetGameSpec();
+        _cachedBoardShape = spec?.rule.boardShape ?? BoardShape.None;
+
         if (_board.Cells == null)
         {
             return;
@@ -177,16 +223,79 @@ public class PuzzleBoardView : MonoBehaviour
             GameObject lineObj = new GameObject("LinkLine");
             lineObj.transform.SetParent(this.transform);
             _lineRenderer = lineObj.AddComponent<LineRenderer>();
-            _lineRenderer.startWidth = 0.15f;
-            _lineRenderer.endWidth = 0.15f;
+            _lineRenderer.startWidth = 25f;
+            _lineRenderer.endWidth = 25f;
             _lineRenderer.positionCount = 0;
             _lineRenderer.useWorldSpace = true;
-            _lineRenderer.sortingOrder = 10;
-            _lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
-            _lineRenderer.startColor = new Color(1f, 1f, 1f, 0.8f);
-            _lineRenderer.endColor = new Color(1f, 1f, 1f, 0.8f);
+            _lineRenderer.sortingLayerName = "Ingame";
+            _lineRenderer.sortingOrder = 100;
+
+            if (_lineMaterial != null)
+            {
+                Destroy(_lineMaterial);
+            }
+
+            Shader shader = Shader.Find("Sprites/Default");
+
+            if (shader != null)
+            {
+                _lineMaterial = new Material(shader);
+                _lineRenderer.material = _lineMaterial;
+            }
+            else
+            {
+                Debug.LogError("[PuzzleBoardView] LineRenderer용 셰이더를 찾을 수 없습니다.");
+            }
+
+            // 초기 색상은 흰색, 드래그 시 블럭 색상으로 동적 교체됨
+            _lineRenderer.startColor = Color.white;
+            _lineRenderer.endColor = Color.white;
         }
         _lineRenderer.positionCount = 0;
+
+        // 포인트 마커용 원형 스프라이트 생성
+        if (_circleSprite == null)
+        {
+            _circleTexture = CreateCircleTexture(64, Color.white);
+            _circleSprite = Sprite.Create(
+                _circleTexture,
+                new Rect(0, 0, 64, 64),
+                new Vector2(0.5f, 0.5f),
+                1f
+            );
+        }
+    }
+
+    /// <summary>
+    /// 프로시저럴 방식으로 원형 텍스처를 생성합니다.
+    /// </summary>
+    /// <param name="size">텍스처의 가로/세로 크기 (픽셀)</param>
+    /// <param name="color">원의 색상</param>
+    /// <returns>생성된 원형 텍스처</returns>
+    private Texture2D CreateCircleTexture(int size, Color color)
+    {
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        float center = size * 0.5f;
+        float radius = center - 1f;
+
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float dist = Vector2.Distance(new Vector2(x, y), new Vector2(center, center));
+                if (dist <= radius)
+                {
+                    tex.SetPixel(x, y, color);
+                }
+                else
+                {
+                    tex.SetPixel(x, y, Color.clear);
+                }
+            }
+        }
+
+        tex.Apply();
+        return tex;
     }
 
     public Vector3 GetLocalPos(GridPos pos)
@@ -203,8 +312,7 @@ public class PuzzleBoardView : MonoBehaviour
         float yPos = pos.Y * cellSize - offsetY;
 
         // 육각형(Hexagon) 오프셋 처리 (Even-Q Flat-Top)
-        GameSpec spec = StageInjection.Instance.GetGameSpec();
-        if (spec != null && spec.rule.boardShape == BoardShape.Hexagon)
+        if (_cachedBoardShape == BoardShape.Hexagon)
         {
             if (pos.X % 2 == 0)
             {
@@ -294,7 +402,7 @@ public class PuzzleBoardView : MonoBehaviour
         }
 
         cellView.Initialize(cellData, gridPos, this);
-        _cellViews.Add(gridPos, cellView);
+        _cellViews[gridPos] = cellView;
     }
 
     private void CreateBlockView(GridPos gridPos, BaseBlock blockData)
@@ -312,7 +420,7 @@ public class PuzzleBoardView : MonoBehaviour
         if (blockView != null)
         {
             blockView.Initialize(blockData, gridPos, this);
-            _blockViews.Add(gridPos, blockView);
+            _blockViews[gridPos] = blockView;
         }
     }
 
@@ -362,24 +470,95 @@ public class PuzzleBoardView : MonoBehaviour
             var path = linkBoard.GetCurrentLinkPath();
             if (path != null && path.Count > 0)
             {
-                _lineRenderer.positionCount = path.Count;
+                // LineRenderer는 최소 2개 포인트가 필요하므로,
+                // 포인트가 1개일 때는 같은 위치에 2개를 찍어 점으로 표시
+                int pointCount = Mathf.Max(path.Count, 2);
+                _lineRenderer.positionCount = pointCount;
+
                 for (int i = 0; i < path.Count; i++)
                 {
                     Vector3 localPos = GetLocalPos(path[i]);
-                    // 선이 블럭이나 타일에 가려지지 않도록 Z축으로 살짝 앞으로 뺍니다.
-                    localPos.z = -1f; 
+                    localPos.z = -1f;
                     Vector3 worldPos = this.transform.TransformPoint(localPos);
                     _lineRenderer.SetPosition(i, worldPos);
                 }
+
+                // 포인트가 1개인 경우 두 번째 포인트를 동일 위치에 배치
+                if (path.Count == 1)
+                {
+                    _lineRenderer.SetPosition(1, _lineRenderer.GetPosition(0));
+                }
+
+                // 각 연결 지점에 포인트 마커 표시
+                UpdateLinkPointMarkers(path);
             }
             else
             {
                 _lineRenderer.positionCount = 0;
+                HideAllLinkPointMarkers();
             }
         }
         else
         {
             _lineRenderer.positionCount = 0;
+            HideAllLinkPointMarkers();
+        }
+    }
+
+    /// <summary>
+    /// 링크 경로의 첫 번째 블럭 스프라이트에서 대표 색상을 추출합니다.
+    /// </summary>
+    /// <param name="path">현재 링크 경로 좌표 리스트</param>
+    /// <returns>블럭의 대표 색상 (추출 실패 시 반투명 흰색)</returns>
+
+    /// <summary>
+    /// 링크 경로의 각 연결 지점에 원형 포인트 마커를 표시합니다.
+    /// </summary>
+    /// <param name="path">현재 링크 경로 좌표 리스트</param>
+    private void UpdateLinkPointMarkers(List<GridPos> path)
+    {
+        // 필요한 만큼 마커 오브젝트 확보
+        while (_linkPointMarkers.Count < path.Count)
+        {
+            GameObject marker = new GameObject("LinkPoint");
+            marker.transform.SetParent(this.transform);
+
+            SpriteRenderer sr = marker.AddComponent<SpriteRenderer>();
+            sr.sprite = _circleSprite;
+            sr.sortingLayerName = "Ingame";
+            sr.sortingOrder = 101;
+            sr.color = Color.white;
+
+            marker.SetActive(false);
+            _linkPointMarkers.Add(marker);
+        }
+
+        // 경로에 맞춰 마커 위치, 색상 지정 및 활성화
+        for (int i = 0; i < path.Count; i++)
+        {
+            GameObject marker = _linkPointMarkers[i];
+            Vector3 localPos = GetLocalPos(path[i]);
+            localPos.z = -2f;
+            marker.transform.localPosition = localPos;
+
+            marker.SetActive(true);
+        }
+
+        // 남는 마커는 비활성화
+        for (int i = path.Count; i < _linkPointMarkers.Count; i++)
+        {
+            _linkPointMarkers[i].SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// 모든 포인트 마커를 비활성화합니다.
+    /// </summary>
+    private void HideAllLinkPointMarkers()
+    {
+        for (int i = 0; i < _linkPointMarkers.Count; i++)
+        {
+            _linkPointMarkers[i].SetActive(false);
         }
     }
 
@@ -535,7 +714,7 @@ public class PuzzleBoardView : MonoBehaviour
                         if (bView != null)
                         {
                             bView.Initialize(action.blockData, action.position, this);
-                            _blockViews.Add(action.position, bView);
+                            _blockViews[action.position] = bView;
                             bView.PlayCreateAnimation(onComplete);
                         }
                         else
