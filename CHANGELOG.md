@@ -48,3 +48,27 @@
 - **안정성 개선 및 버그 수정**:
   - **초기화 안정성**: 로비에서 `GameSpec` 주입 시 데이터 누락 여부를 엄격히 체크하여 씬 이동 후 발생할 수 있는 Null 참조 오류 방지.
   - **입력 상태 복구**: 탭 매치에서 드래그 조작 시 큐에 쌓인 모든 블럭의 선택 상태를 입력 종료 시점에 정상적으로 초기화하도록 수정.
+- **SharedScene 영구 상주 씬 아키텍처 도입**:
+  - `Main.cs`를 MonoBehaviour 싱글톤으로 전환, `[RuntimeInitializeOnLoadMethod(AfterSceneLoad)]`로 SharedScene 자동 Additive 로드.
+  - SharedScene을 Active Scene으로 설정하여 다른 씬의 언로드를 보장.
+  - 에디터에서 어떤 씬에서 플레이해도 TitleScene으로 강제 이동하는 기능 추가.
+- **씬 전환 시스템 개선 (로딩 씬 경유)**:
+  - `MoveScene` → `CoMoveScene` 코루틴 기반으로 변경.
+  - 로딩 씬 로드 → 이전 씬 언로드 → 다음 씬 비동기 로드(대기) → 로딩 씬 언로드 → 다음 씬 활성화 순서 적용.
+  - `_isMovingScene` 플래그로 씬 전환 중 중복 호출 방지.
+  - `SceneEnum`을 Main 클래스 외부 글로벌 enum으로 분리.
+- **매니저 시스템 확장**:
+  - `SoundManager`, `GameDataManager`, `UserDataManager` 싱글톤으로 생성.
+  - `UIManager`, `NetworkManager`, `LocalizationManager` 추가.
+  - 모든 매니저는 SharedScene에 배치, DontDestroyOnLoad 적용.
+- **카메라 관리 시스템 (CameraController)**:
+  - 메인 카메라 싱글톤 관리, `_isMainCamera` 플래그 기반.
+  - 중복 카메라 자동 제거, `CameraController.MainCamera`로 전역 접근.
+- **팝업 시스템 리팩토링**:
+  - `PopupManager`를 컨트롤러 등록/해제 방식으로 재설계.
+  - `PopupController` 추상 베이스 클래스 도입 (OnEnable/OnDisable 자동 등록).
+  - `SharedPopupController`, `LobbyPopupController`, `GamePopupController` 씬별 컨트롤러 생성.
+- **중복 EventSystem 자동 제거**:
+  - `Main.OnSceneLoaded`에서 씬 로드 시 SharedScene의 EventSystem만 유지하고 나머지 자동 제거.
+- **타이틀 씬 연출 (TitleMain)**:
+  - DOTween Sequence로 텍스트 CI 색상 트윈(검정 → #00FF80) + 여운 대기 후 로딩 씬 이동.

@@ -33,10 +33,15 @@ public class Main : MonoBehaviour
     /// <summary>
     /// 게임 시작 시 SharedScene을 자동 로드합니다. SharedScene 내 Main 컴포넌트가 함께 생성됩니다.
     /// </summary>
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    /// <summary>
+    /// 게임 시작 시 SharedScene을 자동 로드합니다.
+    /// AfterSceneLoad 시점이므로 SharedScene에서 직접 플레이 시 Main이 이미 생성되어 중복 로드를 방지합니다.
+    /// </summary>
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void AutoCreate()
     {
-        if (SceneManager.GetSceneByName(SHARED_SCENE_NAME).isLoaded)
+        // SharedScene에서 직접 플레이한 경우 Main.Awake가 이미 실행됨
+        if (_instance != null)
         {
             return;
         }
@@ -59,22 +64,8 @@ public class Main : MonoBehaviour
         DontDestroyOnLoad(gameObject);
         SceneManager.SetActiveScene(gameObject.scene);
         RemoveDuplicateEventSystems();
-        ForceStartFromTitle();
     }
 
-    /// <summary>
-    /// 에디터에서 TitleScene이 아닌 씬으로 플레이 시 TitleScene으로 강제 이동합니다.
-    /// </summary>
-    [System.Diagnostics.Conditional("UNITY_EDITOR")]
-    private void ForceStartFromTitle()
-    {
-        string activeSceneName = SceneManager.GetActiveScene().name;
-        if (activeSceneName != SHARED_SCENE_NAME && activeSceneName != SceneEnum.TitleScene.ToString())
-        {
-            SceneManager.LoadScene(SceneEnum.TitleScene.ToString());
-            _curScene = SceneEnum.TitleScene;
-        }
-    }
 
     /// <summary>
     /// 씬 로드 시 중복 EventSystem을 제거합니다.

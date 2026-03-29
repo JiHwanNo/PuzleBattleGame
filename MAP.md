@@ -43,10 +43,18 @@
 ## ⚙️ 3. 시스템 및 매니저 맵핑
 게임 전반을 관리하는 시스템 코드는 주로 `Assets/02_Scripts/Manager/`에 위치합니다.
 
+- **메인 시스템 (씬 전환/게임 흐름)**: `Assets/02_Scripts/Manager/Main.cs` (싱글톤, RuntimeInitializeOnLoadMethod로 SharedScene 자동 로드)
 - **에셋 및 리소스 로드**: `Assets/02_Scripts/Manager/AssetManager.cs` (Addressables 기반 비동기/동기 로드 및 캐싱)
 - **데이터 주입 및 준비**: `Assets/02_Scripts/StageInjection.cs` (JSON 데이터를 파싱하여 인게임 `GameSpec` 객체로 변환)
 - **오브젝트 풀링**: `Assets/02_Scripts/Manager/PoolManager.cs` (퍼즐 블럭 및 이펙트 생성/삭제 최적화)
-- **팝업 및 UI 관리**: `Assets/02_Scripts/Manager/PopupManager.cs`
+- **팝업 시스템**: `Assets/02_Scripts/Manager/PopupManager.cs` (중앙 관리), `PopupController.cs` (베이스), `SharedPopupController.cs`
+- **사운드**: `Assets/02_Scripts/Manager/SoundManager.cs`
+- **게임 데이터**: `Assets/02_Scripts/Manager/GameDataManager.cs`
+- **유저 데이터**: `Assets/02_Scripts/Manager/UserDataManager.cs`
+- **UI 관리**: `Assets/02_Scripts/Manager/UIManager.cs`
+- **네트워크**: `Assets/02_Scripts/Manager/NetworkManager.cs`
+- **다국어**: `Assets/02_Scripts/Manager/LocalizationManager.cs`
+- **카메라**: `Assets/02_Scripts/CameraController.cs` (메인 카메라 싱글톤, 중복 카메라 자동 제거)
 
 ---
 
@@ -59,6 +67,10 @@
 
 ---
 
-## 🏠 5. 로비 및 씬 흐름
-- **로비 메인 로직**: `Assets/02_Scripts/Lobby/LobbyMain.cs` (로비 씬 진입 초기화 및 UI 연동)
-- **씬 전환 파이프라인**: 사용자가 시작 버튼을 누르면 `LobbyMain`에서 `StageInjection`을 통해 사양서(GameSpec)를 조립 및 검증한 뒤, 문제가 없을 때만 `GameScene`으로 넘어갑니다.
+## 🏠 5. 씬 구조 및 흐름
+- **SharedScene**: 영구 상주 씬. Main, Camera, EventSystem, 각종 매니저 포함. `Main.AutoCreate()`에서 자동 Additive 로드.
+- **TitleScene**: `Assets/02_Scripts/Title/TitleMain.cs` (CI 텍스트 연출 후 LoadingScene 경유하여 다음 씬 이동)
+- **로비 메인 로직**: `Assets/02_Scripts/Lobby/LobbyMain.cs` (로비 씬 UI 연동)
+- **로비 팝업**: `Assets/02_Scripts/Lobby/LobbyPopupController.cs`
+- **인게임 팝업**: `Assets/02_Scripts/PuzzleCore/Controller/GamePopupController.cs`
+- **씬 전환 파이프라인**: `Main.MoveScene()` → 로딩 씬 로드 → 이전 씬 언로드 → 다음 씬 비동기 로드 → 로딩 씬 언로드 → 다음 씬 활성화

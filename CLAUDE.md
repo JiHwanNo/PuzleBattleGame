@@ -59,13 +59,32 @@
 
 ```
 01_Scenes/          - 게임 씬 파일 (.unity)
+  SharedScene       - 영구 상주 씬 (매니저, 카메라, EventSystem)
+  TitleScene        - 타이틀 연출
+  LoadingScene      - 씬 전환 시 로딩 화면
+  LobbyScene        - 로비
+  GameScene         - 인게임
 02_Scripts/         - C# 소스 코드
   PuzzleCore/
     Module/         - Model (순수 C# 퍼즐 로직)
     View/           - View (유니티 시각 연출)
-    Controller/     - Controller (입력/게임 루프)
-  Manager/          - 시스템 매니저 (AssetManager, PoolManager, PopupManager)
-  Lobby/            - 로비 로직 (LobbyMain)
+    Controller/     - Controller (입력/게임 루프), GamePopupController
+  Manager/          - 시스템 매니저
+    Main.cs         - 씬 전환, 게임 흐름 (싱글톤, RuntimeInitializeOnLoadMethod로 자동 생성)
+    AssetManager    - Addressables 기반 에셋 로드
+    PoolManager     - 오브젝트 풀링
+    PopupManager    - 팝업 시스템 중앙 관리 (PopupController 등록/해제)
+    PopupController - 씬별 팝업 컨트롤러 베이스 클래스
+    SharedPopupController - SharedScene 전용 팝업 컨트롤러
+    SoundManager    - 사운드 관리
+    GameDataManager - 게임 데이터 관리
+    UserDataManager - 유저 데이터 관리
+    UIManager       - 공통 UI 연출
+    NetworkManager  - 서버 통신
+    LocalizationManager - 다국어 지원
+    CameraController - 카메라 싱글톤 관리 (메인 카메라 외 중복 제거)
+  Lobby/            - 로비 로직 (LobbyMain, LobbyPopupController)
+  Title/            - 타이틀 로직 (TitleMain)
   StageInjection.cs - JSON -> GameSpec 변환
 03_Prefab/          - 유니티 프리팹
 04_Resources/       - 이미지, 사운드 등
@@ -74,9 +93,32 @@
   Stage/            - 스테이지 데이터 (Stage.json)
 ```
 
-## 씬 흐름
-TitleScene -> LoadingScene -> LobbyScene -> GameScene (+ PopupScene)
-- LobbyScene에서 `StageInjection`을 통해 `GameSpec` 조립/검증 후 GameScene으로 이동.
+## 씬 아키텍처
+
+### SharedScene (영구 상주)
+- `Main`의 `[RuntimeInitializeOnLoadMethod(AfterSceneLoad)]`로 자동 Additive 로드
+- 절대 언로드되지 않으며 Active Scene으로 설정됨
+- 포함: Main, Camera, EventSystem, 각종 매니저, SharedPopupController
+- `SceneEnum` enum으로 씬 종류 정의 (Main 클래스 외부에 선언)
+
+### 씬 전환 흐름
+TitleScene -> (LoadingScene) -> LobbyScene -> (LoadingScene) -> GameScene
+1. 로딩 씬 Additive 로드
+2. 이전 씬 언로드
+3. 다음 씬 비동기 로드 (allowSceneActivation = false로 대기)
+4. 준비 완료 시 로딩 씬 언로드
+5. 다음 씬 활성화
+
+### 에디터 전용
+- 어떤 씬에서 플레이해도 SharedScene 자동 로드 → TitleScene으로 강제 이동
+- `[Conditional("UNITY_EDITOR")]`로 빌드에 미포함
+
+### 팝업 시스템
+- PopupManager (SharedScene) — 싱글톤, 컨트롤러 Dictionary 관리
+- PopupController (베이스) — OnEnable/OnDisable에서 자동 등록/해제
+- SharedPopupController (SharedScene) — 공용 팝업 (네트워크 에러 등)
+- LobbyPopupController (LobbyScene) — 로비 팝업
+- GamePopupController (GameScene) — 인게임 팝업
 
 ---
 
