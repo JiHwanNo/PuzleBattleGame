@@ -6,14 +6,6 @@ using UnityEngine;
 /// </summary>
 public class LobbyMain : MonoBehaviour
 {
-    /// <summary>
-    /// 객체 생성 시 초기화를 수행합니다.
-    /// </summary>
-    private void Awake()
-    {
-        Main.Instance.Init(Main.Scene.LobbyScene);
-        var popupManager = PopupManager.Instance;
-    }
 
     /// <summary>
     /// 스테이지 시작 버튼 클릭 시 호출되며, 데이터를 준비하고 게임 씬으로 이동합니다.
@@ -30,7 +22,7 @@ public class LobbyMain : MonoBehaviour
                 string.IsNullOrEmpty(spec.rule.ruleId) == false && 
                     spec.stageData != null)
         {
-            Main.Instance.MoveScene(Main.Scene.GameScene);
+            Main.Instance.MoveScene(SceneEnum.LobbyScene,SceneEnum.GameScene);
         }
         else
         {

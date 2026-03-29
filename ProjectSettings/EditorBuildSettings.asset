@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/01_Scenes/TitleScene.unity
     guid: 49b49f91f5fc9f846a4fc119bec341c2
   - enabled: 1
+    path: Assets/01_Scenes/SharedScene.unity
+    guid: df037ad65cba1874a873c9c00b3cec29
+  - enabled: 1
     path: Assets/01_Scenes/LoadingScene.unity
     guid: 3c6c43c070e6f384bac916d05c37d370
   - enabled: 1

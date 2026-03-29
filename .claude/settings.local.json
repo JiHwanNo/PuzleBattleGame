@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls -la C:/Users/jihwan/Documents/Game/PuzleBattleGame/*.md)"
+      "Bash(ls -la C:/Users/jihwan/Documents/Game/PuzleBattleGame/*.md)",
+      "Bash(find C:/Users/jihwan/Documents/Game/PuzleBattleGame -name *.ttf -o -name *.otf)"
     ]
   }
 }
