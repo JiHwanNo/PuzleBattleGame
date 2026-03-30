@@ -330,8 +330,16 @@ public class PuzzleBoardView : MonoBehaviour
             return;
         }
 
+        // 육각형 보드일 때 짝수 열의 반 칸 오프셋을 실제 보드 높이에 반영
+        float hexOffsetHeight = 0f;
+        if (_cachedBoardShape == BoardShape.Hexagon && _board.Width > 1)
+        {
+            hexOffsetHeight = cellSize * 0.5f;
+        }
+
+        float boardHeight = (_board.Height * cellSize) + hexOffsetHeight;
         float totalRequiredWidth = (_board.Width * cellSize) + (padding * 2f);
-        float totalRequiredHeight = (_board.Height * cellSize) + (padding * 2f);
+        float totalRequiredHeight = boardHeight + (padding * 2f);
 
         if (Camera.main != null)
         {
@@ -347,7 +355,7 @@ public class PuzzleBoardView : MonoBehaviour
         if (Camera.main != null)
         {
             float camHeightHalf = Camera.main.orthographicSize;
-            float boardHeightHalf = (_board.Height * cellSize) / 2f;
+            float boardHeightHalf = boardHeight / 2f;
             float availableSpace = camHeightHalf - boardHeightHalf - padding;
             finalY = offsetY * 2f * availableSpace;
         }
