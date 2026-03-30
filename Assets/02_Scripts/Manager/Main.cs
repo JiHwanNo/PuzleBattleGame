@@ -62,10 +62,24 @@ public class Main : MonoBehaviour
 
         _instance = this;
         DontDestroyOnLoad(gameObject);
-        SceneManager.SetActiveScene(gameObject.scene);
+        SceneManager.sceneLoaded += OnSharedSceneLoaded;
         RemoveDuplicateEventSystems();
     }
 
+
+    /// <summary>
+    /// SharedScene 로드 완료 시 Active Scene으로 설정합니다.
+    /// </summary>
+    /// <param name="scene">로드된 씬</param>
+    /// <param name="mode">씬 로드 모드</param>
+    private void OnSharedSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == SHARED_SCENE_NAME)
+        {
+            SceneManager.SetActiveScene(scene);
+            SceneManager.sceneLoaded -= OnSharedSceneLoaded;
+        }
+    }
 
     /// <summary>
     /// 씬 로드 시 중복 EventSystem을 제거합니다.
@@ -82,20 +96,34 @@ public class Main : MonoBehaviour
     /// <param name="mode">씬 로드 모드</param>
     private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, LoadSceneMode mode)
     {
+        // 중복 EventSystem 제거 (SharedScene 또는 DontDestroyOnLoad의 것은 유지)
         EventSystem[] eventSystems = FindObjectsByType<EventSystem>(FindObjectsSortMode.None);
-        if (eventSystems.Length <= 1)
+        if (eventSystems.Length > 1)
         {
-            return;
+            for (int i = 0; i < eventSystems.Length; i++)
+            {
+                string sceneName = eventSystems[i].gameObject.scene.name;
+                if (sceneName == SHARED_SCENE_NAME || sceneName == "DontDestroyOnLoad")
+                {
+                    continue;
+                }
+                Destroy(eventSystems[i].gameObject);
+            }
         }
 
-        // SharedScene의 EventSystem을 유지하고 나머지 제거
-        for (int i = 0; i < eventSystems.Length; i++)
+        // 중복 AudioListener 제거 (SharedScene 또는 DontDestroyOnLoad의 것은 유지)
+        AudioListener[] audioListeners = FindObjectsByType<AudioListener>(FindObjectsSortMode.None);
+        if (audioListeners.Length > 1)
         {
-            if (eventSystems[i].gameObject.scene == gameObject.scene)
+            for (int i = 0; i < audioListeners.Length; i++)
             {
-                continue;
+                string sceneName = audioListeners[i].gameObject.scene.name;
+                if (sceneName == SHARED_SCENE_NAME || sceneName == "DontDestroyOnLoad")
+                {
+                    continue;
+                }
+                Destroy(audioListeners[i].gameObject);
             }
-            Destroy(eventSystems[i].gameObject);
         }
     }
 
@@ -120,7 +148,7 @@ public class Main : MonoBehaviour
     /// <param name="next">로드할 다음 씬</param>
     private IEnumerator CoMoveScene(SceneEnum pre, SceneEnum next)
     {
-        _isMovingScene = true;
+            _isMovingScene = true;
 
         // 1. 로딩 씬 로드
         AsyncOperation loadingOp = SceneManager.LoadSceneAsync(SceneEnum.LoadingScene.ToString(), LoadSceneMode.Additive);
@@ -142,13 +170,13 @@ public class Main : MonoBehaviour
             yield return null;
         }
 
-        // 4. 로딩 씬 언로드
-        AsyncOperation unloadLoadingOp = SceneManager.UnloadSceneAsync(SceneEnum.LoadingScene.ToString());
-        yield return unloadLoadingOp;
-
-        // 5. 다음 씬 활성화
+        // 4. 다음 씬 활성화
         nextOp.allowSceneActivation = true;
         yield return nextOp;
+
+        // 5. 로딩 씬 언로드
+        AsyncOperation unloadLoadingOp = SceneManager.UnloadSceneAsync(SceneEnum.LoadingScene.ToString());
+        yield return unloadLoadingOp;
 
         _curScene = next;
         _isMovingScene = false;

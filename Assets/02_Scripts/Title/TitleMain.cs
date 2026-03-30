@@ -20,7 +20,7 @@ public class TitleMain : MonoBehaviour
         sequence.AppendInterval(1f);
         sequence.AppendCallback(() =>
         {
-            Main.Instance.MoveScene(SceneEnum.TitleScene ,SceneEnum.LoadingScene);
+            Main.Instance.MoveScene(SceneEnum.TitleScene ,SceneEnum.LobbyScene);
         });
     }
 }

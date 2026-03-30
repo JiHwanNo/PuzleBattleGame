@@ -25,7 +25,7 @@ public class PuzzleGameController : MonoBehaviour
     private Camera _mainCamera;
 
     /// <summary> Physics2D.OverlapPoint 결과를 재사용하기 위한 버퍼 </summary>
-    private readonly Collider2D[] _hitBuffer = new Collider2D[16];
+    private readonly List<Collider2D> _hitBuffer = new List<Collider2D>(16);
 
     /// <summary>
     /// 게임 시작 시 스테이지 데이터를 로드하고 보드를 초기화합니다.
@@ -88,7 +88,7 @@ public class PuzzleGameController : MonoBehaviour
                 Vector2 worldPosition = _mainCamera.ScreenToWorldPoint(screenPosition);
 
                 // 현재 위치 아래의 콜라이더 감지 (사전 할당 버퍼 사용으로 GC 방지)
-                int hitCount = Physics2D.OverlapPointNonAlloc(worldPosition, _hitBuffer);
+                int hitCount = Physics2D.OverlapPoint(worldPosition, new ContactFilter2D().NoFilter(), _hitBuffer);
 
                 // 모든 충돌체를 순회하며 PuzzleBlockCollider를 찾습니다.
                 for (int i = 0; i < hitCount; i++)
