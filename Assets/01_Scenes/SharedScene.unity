@@ -811,7 +811,7 @@ GameObject:
   - component: {fileID: 2047051863}
   - component: {fileID: 2047051864}
   m_Layer: 0
-  m_Name: PopupManager
+  m_Name: DomainManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -843,7 +843,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0428166b9b2997f4d86b7a03fe923e2f, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PopupManager
+  m_EditorClassIdentifier: Assembly-CSharp::DomainManager
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

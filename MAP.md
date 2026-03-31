@@ -47,7 +47,7 @@
 - **에셋 및 리소스 로드**: `Assets/02_Scripts/Manager/AssetManager.cs` (Addressables 기반 비동기/동기 로드 및 캐싱)
 - **데이터 주입 및 준비**: `Assets/02_Scripts/StageInjection.cs` (JSON 데이터를 파싱하여 인게임 `GameSpec` 객체로 변환)
 - **오브젝트 풀링**: `Assets/02_Scripts/Manager/PoolManager.cs` (퍼즐 블럭 및 이펙트 생성/삭제 최적화)
-- **팝업 시스템**: `Assets/02_Scripts/Manager/PopupManager.cs` (중앙 관리), `PopupController.cs` (베이스), `SharedPopupController.cs`
+- **팝업 시스템**: `Assets/02_Scripts/Manager/DomainManager.cs` (중앙 관리), `PopupController.cs` (베이스), `SharedPopupController.cs`
 - **사운드**: `Assets/02_Scripts/Manager/SoundManager.cs`
 - **게임 데이터**: `Assets/02_Scripts/Manager/GameDataManager.cs`
 - **유저 데이터**: `Assets/02_Scripts/Manager/UserDataManager.cs`

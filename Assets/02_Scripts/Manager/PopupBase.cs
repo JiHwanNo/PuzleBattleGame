@@ -6,10 +6,28 @@ using UnityEngine;
 /// 모든 팝업 프리팹에 부착하는 베이스 클래스.
 /// 팝업의 열림/닫힘 생명주기, 이벤트, 연출(애니메이션)을 담당합니다.
 /// </summary>
-public class PopupBase : MonoBehaviour
+public class PopupBase : MonoBehaviour, IDomainNode
 {
     /// <summary> 팝업 식별 이름 (도메인 경로 추적에 사용) </summary>
     public string PopupName { get; private set; }
+
+    /// <inheritdoc/>
+    public string DomainName
+    {
+        get
+        {
+            return PopupName;
+        }
+    }
+
+    /// <inheritdoc/>
+    public DomainType DomainType
+    {
+        get
+        {
+            return DomainType.Popup;
+        }
+    }
 
     /// <summary> 팝업 열림 완료 시 발생하는 이벤트 </summary>
     public event Action<PopupBase> OnOpened;
@@ -21,7 +39,7 @@ public class PopupBase : MonoBehaviour
     public bool IsAnimating { get; private set; }
 
     /// <summary>
-    /// 팝업 이름을 설정합니다. PopupManager에서 생성 시 호출됩니다.
+    /// 팝업 이름을 설정합니다. DomainManager에서 생성 시 호출됩니다.
     /// </summary>
     /// <param name="popupName">팝업 식별 이름</param>
     public void SetPopupName(string popupName)
@@ -30,7 +48,7 @@ public class PopupBase : MonoBehaviour
     }
 
     /// <summary>
-    /// 팝업 열림 처리를 시작합니다. PopupManager에서 호출됩니다.
+    /// 팝업 열림 처리를 시작합니다. DomainManager에서 호출됩니다.
     /// 열림 연출이 끝난 후 OnOpened 이벤트가 발생합니다.
     /// </summary>
     public void Open()
@@ -41,7 +59,7 @@ public class PopupBase : MonoBehaviour
     }
 
     /// <summary>
-    /// 팝업 닫힘 처리를 시작합니다. PopupManager에서 호출됩니다.
+    /// 팝업 닫힘 처리를 시작합니다. DomainManager에서 호출됩니다.
     /// 닫힘 연출이 끝난 후 OnClosed 이벤트가 발생하고 오브젝트가 파괴됩니다.
     /// </summary>
     /// <param name="onComplete">닫힘 연출 완료 후 호출되는 콜백 (오브젝트 파괴 등)</param>

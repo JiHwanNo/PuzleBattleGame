@@ -73,8 +73,13 @@
     Main.cs         - 씬 전환, 게임 흐름 (싱글톤, RuntimeInitializeOnLoadMethod로 자동 생성)
     AssetManager    - Addressables 기반 에셋 로드
     PoolManager     - 오브젝트 풀링
-    PopupManager    - 팝업 시스템 중앙 관리 (PopupController 등록/해제)
+    DomainManager    - 도메인(팝업/탭) 시스템 중앙 관리 (URL 방식 경로 추적)
+    IDomainNode     - 도메인 노드 인터페이스 (PopupBase, TabBase 공통)
+    DomainType      - 도메인 종류 열거형 (Popup, Tab)
     PopupController - 씬별 팝업 컨트롤러 베이스 클래스
+    PopupBase       - 팝업 프리팹 베이스 클래스
+    TabController   - 씬별 탭 컨트롤러 베이스 클래스
+    TabBase         - 탭 UI 베이스 클래스
     SharedPopupController - SharedScene 전용 팝업 컨트롤러
     SoundManager    - 사운드 관리
     GameDataManager - 게임 데이터 관리
@@ -113,9 +118,11 @@ TitleScene -> (LoadingScene) -> LobbyScene -> (LoadingScene) -> GameScene
 - 어떤 씬에서 플레이해도 SharedScene 자동 로드 → TitleScene으로 강제 이동
 - `[Conditional("UNITY_EDITOR")]`로 빌드에 미포함
 
-### 팝업 시스템
-- PopupManager (SharedScene) — 싱글톤, 컨트롤러 Dictionary 관리
-- PopupController (베이스) — OnEnable/OnDisable에서 자동 등록/해제
+### 도메인 시스템
+- DomainManager (SharedScene) — 싱글톤, 도메인 경로 추적 (예: /Lobby/Shop/ItemDetail)
+- IDomainNode — 팝업과 탭의 공통 인터페이스
+- **팝업**: PopupController (베이스) → PopupBase (프리팹) — 스택 방식, 생성/파괴
+- **탭**: TabController (베이스) → TabBase (UI) — 전환 방식, 활성/비활성
 - SharedPopupController (SharedScene) — 공용 팝업 (네트워크 에러 등)
 - LobbyPopupController (LobbyScene) — 로비 팝업
 - GamePopupController (GameScene) — 인게임 팝업

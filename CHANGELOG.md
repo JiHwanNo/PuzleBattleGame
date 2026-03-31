@@ -65,7 +65,7 @@
   - 메인 카메라 싱글톤 관리, `_isMainCamera` 플래그 기반.
   - 중복 카메라 자동 제거, `CameraController.MainCamera`로 전역 접근.
 - **팝업 시스템 리팩토링**:
-  - `PopupManager`를 컨트롤러 등록/해제 방식으로 재설계.
+  - `DomainManager`를 컨트롤러 등록/해제 방식으로 재설계.
   - `PopupController` 추상 베이스 클래스 도입 (OnEnable/OnDisable 자동 등록).
   - `SharedPopupController`, `LobbyPopupController`, `GamePopupController` 씬별 컨트롤러 생성.
 - **중복 EventSystem 자동 제거**:

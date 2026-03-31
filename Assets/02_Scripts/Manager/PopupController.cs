@@ -3,36 +3,32 @@ using UnityEngine;
 
 /// <summary>
 /// 각 씬에서 팝업의 생성과 제거를 직접 담당하는 컨트롤러 베이스 클래스.
-/// 씬별 팝업 루트 Transform을 보유하며, PopupManager의 요청을 받아 실제 오브젝트를 관리합니다.
+/// 씬별 팝업 루트 Transform을 보유하며, DomainManager의 요청을 받아 실제 오브젝트를 관리합니다.
 /// </summary>
 public abstract class PopupController : MonoBehaviour
 {
     /// <summary> 컨트롤러 식별 이름 (씬 이름과 대응) </summary>
     public abstract string ControllerName { get; }
 
-    /// <summary> 이 씬에서 팝업이 생성될 부모 Transform </summary>
-    [SerializeField]
-    protected Transform _popupRoot;
-
     /// <summary>
-    /// 활성화 시 PopupManager에 등록
+    /// 활성화 시 DomainManager에 등록
     /// </summary>
     protected virtual void OnEnable()
     {
-        if (PopupManager.Instance != null)
+        if (DomainManager.Instance != null)
         {
-            PopupManager.Instance.Register(this);
+            DomainManager.Instance.Register(this);
         }
     }
 
     /// <summary>
-    /// 비활성화 시 PopupManager에서 해제
+    /// 비활성화 시 DomainManager에서 해제
     /// </summary>
     protected virtual void OnDisable()
     {
-        if (PopupManager.Instance != null)
+        if (DomainManager.Instance != null)
         {
-            PopupManager.Instance.Unregister(this);
+            DomainManager.Instance.Unregister(this);
         }
     }
 
@@ -65,7 +61,7 @@ public abstract class PopupController : MonoBehaviour
                     Debug.LogError($"[{ControllerName}PopupController] 팝업 로드 실패: {popupName} (주소: {address})");
                 }
             },
-            _popupRoot
+            this.transform
         );
     }
 

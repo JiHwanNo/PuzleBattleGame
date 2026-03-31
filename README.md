@@ -22,7 +22,7 @@
 
 ### 3. 리소스 및 시스템 관리
 - **Addressables**: 에셋 번들 시스템을 통해 리소스 로드 속도를 최적화하고 메모리를 효율적으로 관리합니다.
-- **Manager System**: `Main`, `AssetManager`, `PopupManager` 등 싱글톤 기반의 중앙 집중식 관리 시스템을 제공합니다.
+- **Manager System**: `Main`, `AssetManager`, `DomainManager` 등 싱글톤 기반의 중앙 집중식 관리 시스템을 제공합니다.
 
 ## 📂 폴더 구조 및 씬(Scenes)
 
