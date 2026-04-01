@@ -12,7 +12,7 @@
 | TitleScene | CI 연출 후 로비로 이동 | TitleMain.cs |
 | LoadingScene | 씬 전환 시 로딩 화면 | — |
 | LobbyScene | 스테이지 선택, 게임 준비 | LobbyMain.cs |
-| GameScene | 인게임 퍼즐 플레이 | PuzzleGameController.cs |
+| GameScene | 인게임 퍼즐 플레이 | PuzzleGameController.cs, ReplayController.cs |
 
 ---
 
@@ -143,11 +143,14 @@ TitleMain.Start()
 
 ### LobbyScene
 ```
-LobbyMain.Start()
-  → 로비 UI 초기화
-  → 스테이지 시작 버튼 → StageInjection.MakeGameSpec()
-    → 데이터 검증
-      → Main.MoveScene(LobbyScene, GameScene)
+LobbyMain.OnClickStartStage()
+  → DomainManager.OpenPopup("PopupReady")
+    → [시작 버튼] PopupReady.OnClickStart()
+      → StageInjection.MakeGameSpec(rulePath, stagePath) (+ 랜덤 시드 생성)
+        → Main.MoveScene(LobbyScene, GameScene)
+    → [리플레이 버튼] PopupReady.OnClickReplay()
+      → 최근 리플레이 JSON 로드 → StageInjection.SetReplayData()
+        → MakeGameSpec() → Main.MoveScene(LobbyScene, GameScene)
 ```
 
 ### GameScene
@@ -155,9 +158,17 @@ LobbyMain.Start()
 PuzzleGameController.Start()
   → StageInjection.GetGameSpec()
     → puzzleType에 따라 Board 생성 (ThreeMatch/Link/TapMatch)
-      → board.Initialize(gameSpec)
+      → board.Initialize(gameSpec) (GameSpec.randomSeed 적용)
         → boardView.DrawBoard(board)
           → 게임 루프 시작
+  → StageInjection.GetReplayData()
+    → (리플레이 있으면) ReplayController.Initialize(replayData)
+      → 리플레이 보드 생성 + 우측 상단 축소 배치 + 자동 재생
+
+PuzzleGameController.Update()
+  → BoardState.Finish 감지
+    → ReplayStorage.Save(replayData) — 리플레이 JSON 자동 저장
+      → Main.MoveScene(GameScene, LobbyScene)
 ```
 
 ---

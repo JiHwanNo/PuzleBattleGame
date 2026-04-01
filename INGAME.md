@@ -40,6 +40,8 @@ Finish
 | `Pause(bool)` | 일시정지 |
 | `AddView(BoardViewAction)` | 뷰 액션 기록 |
 | `FetchActions()` | 기록된 뷰 액션 반환 후 초기화 |
+| `GetRecordedInputs()` | 리플레이용 입력 기록 반환 |
+| `GetRecordedInputEnds()` | 리플레이용 입력 종료 기록 반환 |
 
 **프로퍼티**: `State`, `Random`, `Objective`, `Cells`, `Width`, `Height`
 
@@ -156,6 +158,38 @@ board.FetchActions()
 | BlockState | Idle, Selected, Moving, Matched, Falling, None |
 
 ### GridPos
-- `int X, Y` + 정적 방향 (Up, Down, Left, Right, UpLeft, UpRight, DownLeft, DownRight)
+- `int X, Y` (public 필드, JSON 직렬화 가능) + 정적 방향 (Up, Down, Left, Right, UpLeft, UpRight, DownLeft, DownRight)
 - `IsAdjacentSquare(a, b)`: 4방향 인접 판정
 - `IsAdjacentHexagon(a, b)`: Even-Q Flat-Top 6방향 인접 판정
+
+### InputRecord / InputEndRecord (PuzzleDefine.cs)
+- `InputRecord`: `ulong frame` + `GridPos position` — 유저 클릭/터치 시점 기록
+- `InputEndRecord`: `ulong frame` — 유저 포인터 릴리즈 시점 기록
+- 모든 보드 구현체에서 `Input()` / `InputEnd()` 호출 시 자동 기록
+
+---
+
+## 리플레이 시스템
+
+### 기록 흐름
+```
+게임 시작 → StageInjection이 randomSeed 생성 → Board.Initialize(spec)에 시드 주입
+게임 중   → Board가 InputRecord / InputEndRecord 자동 기록
+게임 종료 → PuzzleGameController가 Finish 감지
+  → board.GetRecordedInputs() + GetRecordedInputEnds()
+    → ReplayData 조립 → ReplayStorage.Save() → JSON 파일 저장
+```
+
+### 재생 흐름 (ReplayController)
+```
+ReplayData 로드 → GameSpec 복원 (동일 Rule/Stage + 동일 시드)
+  → IPuzzleBoard 생성 + Initialize
+    → FixedUpdate에서 프레임 카운터 증가
+      → 해당 프레임의 Input/InputEnd 기록을 보드에 주입
+        → 동일한 게임 결과 재현
+```
+
+### ReplayController 배치
+- 메인 보드와 독립적으로 동작 (별도 IPuzzleBoard + PuzzleBoardView)
+- `viewScale`, `margin` 파라미터로 우측 상단에 축소 자동 배치
+- `PuzzleBoardView.skipCameraAlign = true`로 카메라 간섭 방지

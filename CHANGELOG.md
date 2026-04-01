@@ -14,7 +14,8 @@
 ## 에셋 및 데이터
 
 - **AssetManager**: Addressables 기반 싱글톤, 비동기/동기 로드, 캐싱(`_addressablePacket`)
-- **StageInjection**: ThreeMatchRule/TapMatchRule/LinkMatchRule + Stage.json → GameSpec 병합
+- **StageInjection**: ThreeMatchRule/TapMatchRule/LinkMatchRule + Stage.json → GameSpec 병합, 랜덤 시드 생성, 에셋 주소 보관(`GetRuleAddress()`, `GetStageAddress()`), 리플레이 데이터 전달(`SetReplayData()`, `GetReplayData()`)
+- **ReplayStorage**: 리플레이 JSON 저장/로드 유틸리티 (저장 경로: `Assets/05_Table/Replay/`)
 
 ## 도메인 시스템 (팝업/탭)
 
@@ -45,6 +46,18 @@
 ## UI
 
 - **UI 폴더**: UIButton 공통 버튼 컴포넌트, PopupReady 게임 준비 팝업
+
+## 리플레이 시스템
+
+- **리플레이 기록**: `InputRecord`(프레임+좌표) + `InputEndRecord`(프레임) 자동 기록, 3개 보드 모두 지원
+- **리플레이 저장**: 게임 종료(Finish) 시 `ReplayData` 자동 조립 → `ReplayStorage.Save()` → `Assets/05_Table/Replay/` JSON 저장
+- **리플레이 재생**: `ReplayController`가 기록된 입력을 프레임 단위로 보드에 주입하여 결정론적 재현
+- **랜덤 시드 동적 생성**: `PuzzleRandom(0)` 하드코딩 → `GameSpec.randomSeed` 기반으로 변경, 매 게임마다 새 시드 생성
+- **GridPos 직렬화 수정**: get-only 프로퍼티 → public 필드로 변경 (`JsonUtility` 호환)
+- **게임 종료 → 로비 이동**: `BoardState.Finish` 감지 시 리플레이 저장 후 자동 LobbyScene 이동
+- **PopupReady 리플레이 테스트**: `OnClickReplay` 버튼으로 최근 리플레이 로드 + 상대 보드 재생
+- **ReplayController 배치**: 카메라 기준 우측 상단 자동 축소 배치 (`viewScale`, `margin` 설정)
+- **PuzzleBoardView 확장**: `skipCameraAlign` 플래그, `DrawBoard(board, boardShape?)` 오버로드
 
 ## 안정성
 

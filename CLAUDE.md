@@ -54,7 +54,10 @@ if (condition)
 
 ### 결정론적 리플레이
 - 유저 입력은 프레임(Frame) + 큐(Queue)로 순차 처리.
-- 시드 기반 `PuzzleRandom`, `FixedUpdate`에서만 프레임 전진.
+- `GameSpec.randomSeed` 기반 `PuzzleRandom`, `FixedUpdate`에서만 프레임 전진.
+- 매 게임마다 랜덤 시드 생성 → 리플레이 시 동일 시드 적용으로 재현.
+- `InputRecord`(입력 좌표) + `InputEndRecord`(입력 종료) 프레임 단위 기록 → JSON 저장.
+- `ReplayController`가 기록된 입력을 프레임에 맞춰 보드에 주입하여 재생.
 
 ### 인터페이스 기반 확장
 - `IPuzzleBoard`로 퍼즐 모드 교체 (ThreeMatch, Link, TapMatch).
@@ -67,6 +70,7 @@ if (condition)
 | 작업 | 문서 |
 |------|------|
 | 인게임 퍼즐 (보드, 블럭, 매칭, 뷰, 애니메이션) | `INGAME.md` |
+| 리플레이 (기록, 저장, 재생) | `INGAME.md` + `DATA.md` |
 | UI/팝업/탭 (도메인 시스템, UIButton) | `UI.md` |
 | 데이터/설정 (JSON, GameSpec, 추가 방법) | `DATA.md` |
 | 씬/매니저/인프라 (씬 전환, AssetManager, Pool) | `SCENE.md` |
@@ -86,6 +90,7 @@ if (condition)
 | 매칭/점수 밸런싱 | `INGAME.md` + `DATA.md` |
 | 애니메이션 수정 | `INGAME.md` |
 | 보드 좌표/레이아웃 | `INGAME.md` |
+| 리플레이 기록/재생 | `INGAME.md` + `DATA.md` |
 
 ---
 
@@ -97,10 +102,14 @@ if (condition)
     → TitleScene (CI 연출)
       → LoadingScene 경유
         → LobbyScene (스테이지 선택)
-          → StageInjection.MakeGameSpec() (JSON → GameSpec)
-            → LoadingScene 경유
-              → GameScene
-                → Board 생성 + Initialize + View 그리기 → 게임 루프
+          → PopupReady 팝업 열기
+            → [시작] StageInjection.MakeGameSpec() (JSON → GameSpec + 랜덤 시드 생성)
+            → [리플레이] 최근 리플레이 로드 → SetReplayData()
+              → LoadingScene 경유
+                → GameScene
+                  → Board 생성 + Initialize + View 그리기 → 게임 루프
+                  → (리플레이 있으면) ReplayController 초기화 → 우측 상단 자동 재생
+                    → 게임 종료(Finish) → 리플레이 JSON 저장 → LobbyScene 이동
 ```
 
 ---
@@ -117,5 +126,5 @@ if (condition)
   UI/         - UI 컴포넌트
 03_Prefab/    - Puzzle/, UI/
 04_Resources/ - 이미지, 사운드
-05_Table/     - Rule/ (3개 JSON), Stage/ (Stage.json)
+05_Table/     - Rule/ (3개 JSON), Stage/ (Stage.json), Replay/ (리플레이 JSON)
 ```

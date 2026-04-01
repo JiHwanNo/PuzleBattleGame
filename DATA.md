@@ -45,6 +45,8 @@ GameSpec
 │       ├─ targetId     (string) — 대상 blockId (CollectBlock일 때)
 │       └─ count        (int) — 목표 값
 │
+├─ randomSeed        (int) — 결정론적 리플레이를 위한 난수 시드 (StageInjection에서 자동 생성)
+│
 └─ List<BlockData>
     ├─ blockId         (string) — 블럭 식별자 (예: "100-1")
     ├─ inputType       (int) — Flags: 1:Swap, 2:Link, 4:Touch (조합 가능, 예: 5=Swap+Touch)
@@ -168,3 +170,36 @@ GameSpec
 3. `inputType` 플래그 조합 설정
 4. 필요 시 `INGAME.md` 참고하여 새 Block 클래스 + Factory 분기 추가
 5. 블럭 스프라이트를 `Assets/04_Resources/Block/`에 추가 후 Addressable 등록
+
+---
+
+## ReplayData JSON 구조
+
+파일 위치: `Assets/05_Table/Replay/replay_{timestamp}.json`
+게임 종료 시 `ReplayStorage.Save()`에 의해 자동 생성됨.
+
+```json
+{
+    "ruleAddress": "LinkMatchRule",
+    "stageAddress": "Stage",
+    "randomSeed": 2095364872,
+    "inputs": [
+        { "frame": 67, "position": { "X": 3, "Y": 6 } },
+        { "frame": 90, "position": { "X": 3, "Y": 5 } }
+    ],
+    "inputEnds": [
+        { "frame": 115 },
+        { "frame": 240 }
+    ],
+    "recordedAt": "2026-04-01T20:37:34+09:00"
+}
+```
+
+| 필드 | 타입 | 설명 |
+|------|------|------|
+| `ruleAddress` | string | 규칙 JSON의 Addressable 에셋 주소 |
+| `stageAddress` | string | 스테이지 JSON의 Addressable 에셋 주소 |
+| `randomSeed` | int | 게임에 사용된 난수 시드 |
+| `inputs` | List | 유저 입력 기록 (프레임 + 그리드 좌표) |
+| `inputEnds` | List | 유저 입력 종료 기록 (프레임) |
+| `recordedAt` | string | 기록 일시 (ISO 8601) |

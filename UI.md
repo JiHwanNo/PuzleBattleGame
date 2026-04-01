@@ -91,7 +91,8 @@ PopupHandler.ClosePopup() 또는 DomainManager.Close(name)
 // 예: PopupReady.cs
 public class PopupReady : PopupHandler
 {
-    private void OnClickStart() { /* 시작 로직 */ }
+    private void OnClickStart() { /* 게임 데이터 준비 → GameScene 이동 */ }
+    private void OnClickReplay() { /* 최근 리플레이 로드 → SetReplayData → GameScene 이동 */ }
     private void OnClickClose() { ClosePopup(); }
 }
 ```
