@@ -27,6 +27,12 @@ public class StageInjection
     /// <summary> 현재 구성된 게임 전체 사양서 </summary>
     private GameSpec _gameSpec;
 
+    /// <summary> 마지막으로 사용된 규칙 에셋 주소 </summary>
+    private string _ruleAddress;
+
+    /// <summary> 마지막으로 사용된 스테이지 에셋 주소 </summary>
+    private string _stageAddress;
+
     /// <summary>
     /// 현재 보관 중인 게임 사양서 객체를 반환합니다.
     /// </summary>
@@ -41,8 +47,22 @@ public class StageInjection
     /// </summary>
     /// <param name="ruleAddress">Addressable 내 규칙 JSON 에셋 주소</param>
     /// <param name="stageAddress">Addressable 내 스테이지 JSON 에셋 주소</param>
+    /// <summary>
+    /// 마지막으로 사용된 규칙 에셋 주소를 반환합니다.
+    /// </summary>
+    /// <returns>규칙 에셋 주소</returns>
+    public string GetRuleAddress() => _ruleAddress;
+
+    /// <summary>
+    /// 마지막으로 사용된 스테이지 에셋 주소를 반환합니다.
+    /// </summary>
+    /// <returns>스테이지 에셋 주소</returns>
+    public string GetStageAddress() => _stageAddress;
+
     public void MakeGameSpec(string ruleAddress, string stageAddress)
     {
+        _ruleAddress = ruleAddress;
+        _stageAddress = stageAddress;
         _gameSpec = new GameSpec();
 
         // 1. 규칙(Rule) 데이터 로드 및 파싱 (원본 로직 보존)
@@ -68,5 +88,8 @@ public class StageInjection
         {
             Debug.LogError($"스테이지 에셋 로드 실패: {stageAddress}");
         }
+
+        // 3. 결정론적 리플레이를 위한 랜덤 시드 생성
+        _gameSpec.randomSeed = new System.Random().Next();
     }
 }

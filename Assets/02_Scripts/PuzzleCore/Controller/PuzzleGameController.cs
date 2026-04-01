@@ -1,4 +1,5 @@
 using Puzzle.Core;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -20,6 +21,9 @@ public class PuzzleGameController : MonoBehaviour
 
     /// <summary> 보드가 정상적으로 초기화되었는지 여부 </summary>
     private bool _isInitialized = false;
+
+    /// <summary> 리플레이 저장이 이미 완료되었는지 여부 (중복 저장 방지) </summary>
+    private bool _replaySaved = false;
 
     /// <summary> 캐싱된 메인 카메라 참조 </summary>
     private Camera _mainCamera;
@@ -118,6 +122,13 @@ public class PuzzleGameController : MonoBehaviour
 
         // 3. 보드 논리 업데이트
         _board.Update();
+
+        // 4. 게임 종료 시 리플레이 자동 저장
+        if (_board.State == BoardState.Finish && !_replaySaved)
+        {
+            _replaySaved = true;
+            SaveReplay();
+        }
     }
 
     /// <summary>
@@ -180,6 +191,24 @@ public class PuzzleGameController : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    /// <summary>
+    /// 게임 종료 시 리플레이 데이터를 수집하여 로컬 JSON 파일로 저장합니다.
+    /// </summary>
+    private void SaveReplay()
+    {
+        var replayData = new ReplayData
+        {
+            ruleAddress = StageInjection.Instance.GetRuleAddress(),
+            stageAddress = StageInjection.Instance.GetStageAddress(),
+            randomSeed = StageInjection.Instance.GetGameSpec().randomSeed,
+            inputs = _board.GetRecordedInputs(),
+            inputEnds = _board.GetRecordedInputEnds(),
+            recordedAt = DateTime.Now.ToString("o")
+        };
+
+        ReplayStorage.Save(replayData);
     }
 
     /// <summary>

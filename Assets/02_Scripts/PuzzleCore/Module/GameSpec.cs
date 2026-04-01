@@ -19,6 +19,9 @@ namespace Puzzle.Core
         /// <summary> 게임 내에서 사용 가능한 모든 블록의 정의 목록 </summary>
         public List<BlockData> blocks;
 
+        /// <summary> 결정론적 리플레이를 위한 난수 시드 </summary>
+        public int randomSeed;
+
         /// <summary>
         /// 현재 설정된 게임 규칙 데이터를 반환합니다.
         /// </summary>

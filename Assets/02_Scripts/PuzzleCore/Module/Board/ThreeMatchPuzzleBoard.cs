@@ -49,6 +49,9 @@ namespace Puzzle.Core
         /// <summary> 지금까지의 모든 유저 조작 기록 </summary>
         private List<InputRecord> _recordedInputs = new List<InputRecord>();
 
+        /// <summary> 지금까지의 모든 입력 종료 기록 </summary>
+        private List<InputEndRecord> _recordedInputEnds = new List<InputEndRecord>();
+
         /// <summary> 현재 보드 프레임 번호 (리플레이용) </summary>
         private ulong _frameCount;
 
@@ -78,10 +81,11 @@ namespace Puzzle.Core
             Cells = new Dictionary<GridPos, PuzzleCell>();
             _views = new List<BoardViewAction>();
             _recordedInputs = new List<InputRecord>();
+            _recordedInputEnds = new List<InputEndRecord>();
             _frameCount = 0;
             _currentOrderIndex = 0;
             gameSpec = spec;
-            Random = new PuzzleRandom(0);
+            Random = new PuzzleRandom(spec.randomSeed);
             Objective = new ObjectiveManager(gameSpec?.rule.objectives, gameSpec?.rule.timeLimit ?? 0);
 
             if (gameSpec?.stageData != null)
@@ -178,6 +182,8 @@ namespace Puzzle.Core
 
         public bool InputEnd()
         {
+            _recordedInputEnds.Add(new InputEndRecord(_frameCount));
+
             if (State != BoardState.Waiting || _inputQueue.Count == 0)
             {
                 _inputQueue.Clear();
@@ -495,6 +501,7 @@ namespace Puzzle.Core
 
         public void Pause(bool pause) { }
         public List<InputRecord> GetRecordedInputs() => new List<InputRecord>(_recordedInputs);
+        public List<InputEndRecord> GetRecordedInputEnds() => new List<InputEndRecord>(_recordedInputEnds);
 
         public List<BoardViewAction> FetchActions()
         {

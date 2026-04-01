@@ -23,6 +23,7 @@ namespace Puzzle.Core
         private GridPos? _lastEnqueuedInput = null;
         private List<BoardViewAction> _views = new List<BoardViewAction>();
         private List<InputRecord> _recordedInputs = new List<InputRecord>();
+        private List<InputEndRecord> _recordedInputEnds = new List<InputEndRecord>();
         private ulong _frameCount;
         internal GameSpec gameSpec;
         private uint _currentOrderIndex = 0;
@@ -35,10 +36,11 @@ namespace Puzzle.Core
             Cells = new Dictionary<GridPos, PuzzleCell>();
             _views = new List<BoardViewAction>();
             _recordedInputs = new List<InputRecord>();
+            _recordedInputEnds = new List<InputEndRecord>();
             _frameCount = 0;
             _currentOrderIndex = 0;
             gameSpec = spec;
-            Random = new PuzzleRandom(0);
+            Random = new PuzzleRandom(spec.randomSeed);
             Objective = new ObjectiveManager(gameSpec?.rule.objectives, gameSpec?.rule.timeLimit ?? 0);
 
             if (gameSpec?.stageData != null)
@@ -100,6 +102,8 @@ namespace Puzzle.Core
 
         public bool InputEnd()
         {
+            _recordedInputEnds.Add(new InputEndRecord(_frameCount));
+
             if (State != BoardState.Waiting || _inputQueue.Count == 0)
             {
                 foreach (var pos in _inputQueue)
@@ -335,6 +339,7 @@ namespace Puzzle.Core
 
         public void Pause(bool pause) { }
         public List<InputRecord> GetRecordedInputs() => new List<InputRecord>(_recordedInputs);
+        public List<InputEndRecord> GetRecordedInputEnds() => new List<InputEndRecord>(_recordedInputEnds);
 
         public List<BoardViewAction> FetchActions()
         {

@@ -356,10 +356,34 @@ namespace Puzzle.Core
         /// <summary> 클릭/터치된 그리드 좌표 </summary>
         public GridPos position;
 
+        /// <summary>
+        /// 입력 기록을 생성합니다.
+        /// </summary>
+        /// <param name="frame">조작이 발생한 프레임</param>
+        /// <param name="pos">클릭/터치된 그리드 좌표</param>
         public InputRecord(ulong frame, GridPos pos)
         {
             this.frame = frame;
             this.position = pos;
+        }
+    }
+
+    /// <summary>
+    /// 리플레이를 위해 유저가 입력을 종료(포인터 릴리즈)한 프레임을 기록하는 구조체입니다.
+    /// </summary>
+    [Serializable]
+    public struct InputEndRecord
+    {
+        /// <summary> 입력 종료가 발생한 게임 로직 프레임 </summary>
+        public ulong frame;
+
+        /// <summary>
+        /// 입력 종료 기록을 생성합니다.
+        /// </summary>
+        /// <param name="frame">입력 종료가 발생한 프레임</param>
+        public InputEndRecord(ulong frame)
+        {
+            this.frame = frame;
         }
     }
 }

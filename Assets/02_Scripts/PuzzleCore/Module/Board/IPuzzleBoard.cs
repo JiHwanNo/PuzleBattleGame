@@ -72,6 +72,9 @@ namespace Puzzle.Core
         /// <summary> 지금까지 기록된 유저의 모든 조작 내역을 반환합니다. (리플레이용) </summary>
         List<InputRecord> GetRecordedInputs();
 
+        /// <summary> 지금까지 기록된 유저의 모든 입력 종료 내역을 반환합니다. (리플레이용) </summary>
+        List<InputEndRecord> GetRecordedInputEnds();
+
         /// <summary> 지정된 좌표에 해당하는 셀 객체를 가져옵니다. </summary>
         PuzzleCell GetCell(GridPos pos);
     }
