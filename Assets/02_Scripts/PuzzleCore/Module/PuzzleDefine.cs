@@ -10,9 +10,9 @@ namespace Puzzle.Core
     public struct GridPos : IEquatable<GridPos>
     {
         /// <summary> 가로 좌표 (X축) </summary>
-        public int X { get; }
+        public int X;
         /// <summary> 세로 좌표 (Y축) </summary>
-        public int Y { get; }
+        public int Y;
 
         public GridPos(int x, int y)
         {

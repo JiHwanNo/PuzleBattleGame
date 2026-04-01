@@ -22,7 +22,7 @@ namespace Puzzle.Core
         {
             try
             {
-                string directoryPath = Path.Combine(Application.persistentDataPath, ReplayDirectory);
+                string directoryPath = GetReplayDirectoryPath();
                 if (!Directory.Exists(directoryPath))
                 {
                     Directory.CreateDirectory(directoryPath);
@@ -79,7 +79,7 @@ namespace Puzzle.Core
         /// <returns>리플레이 디렉터리 경로</returns>
         public static string GetReplayDirectoryPath()
         {
-            return Path.Combine(Application.persistentDataPath, ReplayDirectory);
+            return Path.Combine(Application.dataPath, "05_Table", ReplayDirectory);
         }
     }
 }

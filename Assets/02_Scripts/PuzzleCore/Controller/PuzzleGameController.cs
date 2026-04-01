@@ -123,11 +123,12 @@ public class PuzzleGameController : MonoBehaviour
         // 3. 보드 논리 업데이트
         _board.Update();
 
-        // 4. 게임 종료 시 리플레이 자동 저장
+        // 4. 게임 종료 시 리플레이 자동 저장 후 로비로 이동
         if (_board.State == BoardState.Finish && !_replaySaved)
         {
             _replaySaved = true;
             SaveReplay();
+            Main.Instance.MoveScene(SceneEnum.GameScene, SceneEnum.LobbyScene);
         }
     }
 

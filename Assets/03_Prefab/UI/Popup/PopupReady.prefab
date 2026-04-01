@@ -267,7 +267,7 @@ PrefabInstance:
       objectReference: {fileID: 224724532861740246}
     - target: {fileID: 2067200797208832703, guid: 1dd7abb55ae232d44b600f5607c47108, type: 3}
       propertyPath: _callbackName
-      value: OnClickClose
+      value: OnClickStart
       objectReference: {fileID: 0}
     - target: {fileID: 3615526853626541721, guid: 1dd7abb55ae232d44b600f5607c47108, type: 3}
       propertyPath: m_Pivot.x
