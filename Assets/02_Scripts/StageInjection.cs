@@ -33,6 +33,9 @@ public class StageInjection
     /// <summary> 마지막으로 사용된 스테이지 에셋 주소 </summary>
     private string _stageAddress;
 
+    /// <summary> 상대방 리플레이 데이터 (null이면 리플레이 없음) </summary>
+    private ReplayData _replayData;
+
     /// <summary>
     /// 현재 보관 중인 게임 사양서 객체를 반환합니다.
     /// </summary>
@@ -58,6 +61,24 @@ public class StageInjection
     /// </summary>
     /// <returns>스테이지 에셋 주소</returns>
     public string GetStageAddress() => _stageAddress;
+
+    /// <summary>
+    /// 상대방 리플레이 데이터를 설정합니다. GameScene 진입 시 ReplayController가 참조합니다.
+    /// </summary>
+    /// <param name="replayData">리플레이 데이터 (null이면 리플레이 없음)</param>
+    public void SetReplayData(ReplayData replayData)
+    {
+        _replayData = replayData;
+    }
+
+    /// <summary>
+    /// 설정된 상대방 리플레이 데이터를 반환합니다.
+    /// </summary>
+    /// <returns>리플레이 데이터 (없으면 null)</returns>
+    public ReplayData GetReplayData()
+    {
+        return _replayData;
+    }
 
     public void MakeGameSpec(string ruleAddress, string stageAddress)
     {

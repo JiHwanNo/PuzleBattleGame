@@ -13,6 +13,9 @@ public class PuzzleGameController : MonoBehaviour
     /// <summary> 화면에 보드를 그리는 뷰 객체 </summary>
     public PuzzleBoardView boardView;
 
+    /// <summary> 상대방 리플레이를 재생하는 컨트롤러 </summary>
+    public ReplayController replayController;
+
     /// <summary> 퍼즐 보드의 핵심 로직을 처리하는 모델 인터페이스 </summary>
     private IPuzzleBoard _board;
 
@@ -70,6 +73,14 @@ public class PuzzleGameController : MonoBehaviour
 
         _mainCamera = Camera.main;
         _isInitialized = true;
+
+        // 상대방 리플레이 데이터가 있으면 리플레이 컨트롤러 초기화
+        ReplayData replayData = StageInjection.Instance.GetReplayData();
+        if (replayData != null && replayController != null)
+        {
+            replayController.Initialize(replayData);
+            StageInjection.Instance.SetReplayData(null); // 사용 후 초기화
+        }
     }
 
     /// <summary>

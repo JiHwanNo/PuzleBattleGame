@@ -31,6 +31,9 @@ public class PuzzleBoardView : MonoBehaviour
     /// <summary> 보드 외곽의 여백 크기 </summary>
     public float padding = 1.0f;
 
+    /// <summary> true이면 DrawBoard 시 카메라 orthographicSize 조정을 건너뜁니다. (리플레이 보드용) </summary>
+    public bool skipCameraAlign = false;
+
     /// <summary> 
     /// 보드의 수직 위치 오프셋 (0: 중앙, 0.5: 상단 정렬, -0.5: 하단 정렬) 
     /// </summary>
@@ -166,13 +169,25 @@ public class PuzzleBoardView : MonoBehaviour
         }
     }
 
-    public void DrawBoard(IPuzzleBoard boardData)
+    /// <summary>
+    /// 보드 데이터를 바탕으로 셀과 블럭을 화면에 그립니다.
+    /// </summary>
+    /// <param name="boardData">그릴 보드 모델</param>
+    /// <param name="boardShape">보드 모양 (null이면 StageInjection에서 조회)</param>
+    public void DrawBoard(IPuzzleBoard boardData, BoardShape? boardShape = null)
     {
         _board = boardData;
 
         // 보드 모양 캐싱 (GetLocalPos에서 매번 StageInjection 조회 방지)
-        GameSpec spec = StageInjection.Instance.GetGameSpec();
-        _cachedBoardShape = spec?.rule.boardShape ?? BoardShape.None;
+        if (boardShape.HasValue)
+        {
+            _cachedBoardShape = boardShape.Value;
+        }
+        else
+        {
+            GameSpec spec = StageInjection.Instance.GetGameSpec();
+            _cachedBoardShape = spec?.rule.boardShape ?? BoardShape.None;
+        }
 
         if (_board.Cells == null)
         {
@@ -213,7 +228,10 @@ public class PuzzleBoardView : MonoBehaviour
             }
         }
 
-        AlignBoardToCenter();
+        if (!skipCameraAlign)
+        {
+            AlignBoardToCenter();
+        }
     }
 
     private void SetupLineRenderer()
