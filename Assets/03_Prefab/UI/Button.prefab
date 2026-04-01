@@ -51,7 +51,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UIButton
   _root: {fileID: 0}
-  _unityButton: {fileID: 0}
+  _unityButton: {fileID: 6152134135614511035}
   _callbackName: 
   _callbackValue: 
 --- !u!1 &8475507098319021979

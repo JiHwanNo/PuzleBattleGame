@@ -150,6 +150,12 @@ public class Main : MonoBehaviour
     {
             _isMovingScene = true;
 
+        // 0. 열려있는 모든 도메인(팝업, 탭) 정리
+        if (DomainManager.Instance != null)
+        {
+            DomainManager.Instance.CloseAll();
+        }
+
         // 1. 로딩 씬 로드
         AsyncOperation loadingOp = SceneManager.LoadSceneAsync(SceneEnum.LoadingScene.ToString(), LoadSceneMode.Additive);
         yield return loadingOp;

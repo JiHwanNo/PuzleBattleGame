@@ -6,7 +6,8 @@
       "Bash(git mv:*)",
       "Bash(find C:UsersjihwanDocumentsGamePuzleBattleGameAssets03_Prefab -name *[Pp]opup*.prefab)",
       "Bash(xargs grep:*)",
-      "Bash(find /c/Users/jihwan/Documents/Game/PuzleBattleGame/Assets/03_Prefab -type f -name *.prefab)"
+      "Bash(find /c/Users/jihwan/Documents/Game/PuzleBattleGame/Assets/03_Prefab -type f -name *.prefab)",
+      "Bash(ls -la /c/Users/jihwan/Documents/Game/PuzleBattleGame/Assets/02_Scripts/Manager/*.cs)"
     ]
   }
 }
