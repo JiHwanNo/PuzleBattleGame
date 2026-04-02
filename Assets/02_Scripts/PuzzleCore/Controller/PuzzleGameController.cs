@@ -1,6 +1,7 @@
 using Puzzle.Core;
 using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -15,6 +16,15 @@ public class PuzzleGameController : MonoBehaviour
 
     /// <summary> 상대방 리플레이를 재생하는 컨트롤러 </summary>
     public ReplayController replayController;
+
+    [Header("UI References")]
+    /// <summary> 남은 시간을 표시하는 텍스트 (인스펙터에서 연결) </summary>
+    [SerializeField]
+    private TMP_Text _timerText;
+
+    /// <summary> 현재 점수를 표시하는 텍스트 (인스펙터에서 연결) </summary>
+    [SerializeField]
+    private TMP_Text _scoreText;
 
     /// <summary> 퍼즐 보드의 핵심 로직을 처리하는 모델 인터페이스 </summary>
     private IPuzzleBoard _board;
@@ -36,6 +46,12 @@ public class PuzzleGameController : MonoBehaviour
 
     /// <summary> Physics2D.OverlapPoint에 사용할 캐싱된 필터 (매 프레임 할당 방지) </summary>
     private static readonly ContactFilter2D _noFilter = new ContactFilter2D().NoFilter();
+
+    /// <summary> 타이머 텍스트 갱신 빈도 제어용 (이전 표시된 초 값) </summary>
+    private int _lastDisplayedSeconds = -1;
+
+    /// <summary> 점수 텍스트 갱신 빈도 제어용 (이전 표시된 점수 값) </summary>
+    private int _lastDisplayedScore = -1;
 
     /// <summary>
     /// 게임 시작 시 스테이지 데이터를 로드하고 보드를 초기화합니다.
@@ -137,7 +153,11 @@ public class PuzzleGameController : MonoBehaviour
         // 3. 보드 논리 업데이트
         _board.Update();
 
-        // 4. 게임 종료 시 리플레이 자동 저장 후 로비로 이동
+        // 4. UI 갱신
+        UpdateTimerUI();
+        UpdateScoreUI();
+
+        // 5. 게임 종료 시 리플레이 자동 저장 후 로비로 이동
         if (_board.State == BoardState.Finish && !_replaySaved)
         {
             _replaySaved = true;
@@ -157,6 +177,50 @@ public class PuzzleGameController : MonoBehaviour
         }
 
         _board.FixedUpdate();
+    }
+
+    /// <summary>
+    /// 남은 시간을 UI 텍스트에 반영합니다. 초 단위가 변경될 때만 갱신하여 불필요한 문자열 할당을 방지합니다.
+    /// </summary>
+    private void UpdateTimerUI()
+    {
+        if (_timerText == null || _board.Objective == null)
+        {
+            return;
+        }
+
+        float remaining = _board.Objective.RemainingTime;
+        int seconds = Mathf.CeilToInt(remaining);
+        if (seconds < 0)
+        {
+            seconds = 0;
+        }
+
+        if (seconds != _lastDisplayedSeconds)
+        {
+            _lastDisplayedSeconds = seconds;
+            int min = seconds / 60;
+            int sec = seconds % 60;
+            _timerText.SetText("{0}:{1:00}", min, sec);
+        }
+    }
+
+    /// <summary>
+    /// 현재 점수를 UI 텍스트에 반영합니다. 값이 변경될 때만 갱신합니다.
+    /// </summary>
+    private void UpdateScoreUI()
+    {
+        if (_scoreText == null || _board.Objective == null)
+        {
+            return;
+        }
+
+        int score = _board.Objective.CurrentScore;
+        if (score != _lastDisplayedScore)
+        {
+            _lastDisplayedScore = score;
+            _scoreText.SetText("{0}", score);
+        }
     }
 
     /// <summary>
