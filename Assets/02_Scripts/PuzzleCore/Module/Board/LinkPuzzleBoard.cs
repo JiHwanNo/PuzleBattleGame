@@ -212,18 +212,10 @@ namespace Puzzle.Core
                     break;
 
                 case BoardState.Falling:
-                    if (ProcessFallingAndFilling())
-                    {
-                        // 낙하가 발생했으면 다시 매칭 체크(링크 게임은 자동 매칭이 없으므로 바로 대기)
-                        // 단, 낙하 후 떨어지는 애니메이션을 위해 Falling 유지 후, 변화가 없으면 Waiting으로 감.
-                        State = BoardState.Falling; 
-                    }
-                    else
-                    {
-                        // 낙하가 완전히 끝나면 입력 대기 상태로 전환
-                        State = BoardState.Waiting;
-                        _currentOrderIndex = 0;
-                    }
+                    ProcessFallingAndFilling();
+                    // 링크 게임은 자동 매칭이 없으므로 낙하/보충 후 바로 대기 상태로 전환
+                    State = BoardState.Waiting;
+                    _currentOrderIndex = 0;
                     break;
 
                 case BoardState.Filling:

@@ -61,6 +61,9 @@ namespace Puzzle.Core
         /// <summary> 연출의 시각적 순서를 정하는 인덱스 (프레임과 무관하게 증가) </summary>
         private uint _currentOrderIndex = 0;
 
+        /// <summary> FindMatches() 재사용 HashSet (매 호출마다 할당 방지) </summary>
+        private HashSet<GridPos> _matchBuffer = new HashSet<GridPos>();
+
         /// <summary>
         /// 보드 내부 로직을 수행하며 로그를 전달합니다.
         /// </summary>
@@ -346,7 +349,8 @@ namespace Puzzle.Core
         }
         private HashSet<GridPos> FindMatches()
         {
-            HashSet<GridPos> matches = new HashSet<GridPos>();
+            _matchBuffer.Clear();
+            HashSet<GridPos> matches = _matchBuffer;
 
             // 가로 탐색
             for (int y = 0; y < Height; y++)

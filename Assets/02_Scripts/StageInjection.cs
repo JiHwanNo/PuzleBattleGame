@@ -80,13 +80,19 @@ public class StageInjection
         return _replayData;
     }
 
-    public void MakeGameSpec(string ruleAddress, string stageAddress)
+    /// <summary>
+    /// 지정된 규칙과 스테이지 에셋 주소로부터 데이터를 로드하여 게임 사양서를 완성합니다.
+    /// </summary>
+    /// <param name="ruleAddress">Addressable 내 규칙 JSON 에셋 주소</param>
+    /// <param name="stageAddress">Addressable 내 스테이지 JSON 에셋 주소</param>
+    /// <returns>사양서 생성 성공 여부</returns>
+    public bool MakeGameSpec(string ruleAddress, string stageAddress)
     {
         _ruleAddress = ruleAddress;
         _stageAddress = stageAddress;
         _gameSpec = new GameSpec();
 
-        // 1. 규칙(Rule) 데이터 로드 및 파싱 (원본 로직 보존)
+        // 1. 규칙(Rule) 데이터 로드 및 파싱
         TextAsset ruleAsset = AssetManager.Instance.LoadAsset<TextAsset>(ruleAddress);
         if (ruleAsset != null)
         {
@@ -96,7 +102,9 @@ public class StageInjection
         }
         else
         {
-            Debug.LogError($"규칙 에셋 로드 실패: {ruleAddress}");
+            Debug.LogError($"[StageInjection] 규칙 에셋 로드 실패: {ruleAddress}");
+            _gameSpec = null;
+            return false;
         }
 
         // 2. 스테이지(Stage) 데이터 로드 및 파싱
@@ -107,10 +115,13 @@ public class StageInjection
         }
         else
         {
-            Debug.LogError($"스테이지 에셋 로드 실패: {stageAddress}");
+            Debug.LogError($"[StageInjection] 스테이지 에셋 로드 실패: {stageAddress}");
+            _gameSpec = null;
+            return false;
         }
 
         // 3. 결정론적 리플레이를 위한 랜덤 시드 생성
         _gameSpec.randomSeed = new System.Random().Next();
+        return true;
     }
 }

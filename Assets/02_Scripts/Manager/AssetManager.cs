@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using System.Linq;
 
 /// <summary>
 /// Addressables 시스템을 이용해 게임 에셋의 로드 및 인스턴스화를 관리하는 싱글톤 클래스입니다.
@@ -43,6 +44,12 @@ public class AssetManager
     /// <summary> 로드된 에셋들을 주소별로 캐싱하는 딕셔너리 </summary>
     private Dictionary<string, object> _addressablePacket = new Dictionary<string, object>();
 
+    /// <summary> Addressables 해제를 위해 로드 핸들을 주소별로 보관하는 딕셔너리 </summary>
+    private Dictionary<string, AsyncOperationHandle> _handlePacket = new Dictionary<string, AsyncOperationHandle>();
+
+    /// <summary> 씬 전환 시에도 캐시에서 유지할 에셋 주소 목록 (프리팹 등 공용 에셋) </summary>
+    private HashSet<string> _persistentAddresses = new HashSet<string>();
+
     /// <summary>
     /// 에셋을 비동기적으로 로드합니다. 이미 캐싱된 경우 즉시 성공 콜백을 호출합니다.
     /// </summary>
@@ -62,13 +69,15 @@ public class AssetManager
             return;
         }
 
-        Addressables.LoadAssetAsync<T>(args.address).Completed += (op) =>
+        AsyncOperationHandle<T> handle = Addressables.LoadAssetAsync<T>(args.address);
+        handle.Completed += (op) =>
         {
             if (op.Status == AsyncOperationStatus.Succeeded)
             {
                 if (!_addressablePacket.ContainsKey(args.address))
                 {
                     _addressablePacket.Add(args.address, op.Result);
+                    _handlePacket[args.address] = handle;
                 }
 
                 args.successCallback?.Invoke(op.Result);
@@ -131,13 +140,44 @@ public class AssetManager
             return (T)reObj;
         }
         
-        object newObj = Addressables.LoadAssetAsync<T>(address).WaitForCompletion();
-        
-        if (newObj != null && !_addressablePacket.ContainsKey(address))
+        AsyncOperationHandle<T> handle = Addressables.LoadAssetAsync<T>(address);
+        T result = handle.WaitForCompletion();
+
+        if (result != null && !_addressablePacket.ContainsKey(address))
         {
-            _addressablePacket.Add(address, newObj);
+            _addressablePacket.Add(address, result);
+            _handlePacket[address] = handle;
         }
-        return (T)newObj;
+        return result;
+    }
+
+    /// <summary>
+    /// 특정 에셋 주소를 씬 전환 시에도 유지되도록 등록합니다. (프리팹 등 공용 에셋)
+    /// </summary>
+    /// <param name="address">유지할 에셋 주소</param>
+    internal void MarkPersistent(string address)
+    {
+        _persistentAddresses.Add(address);
+    }
+
+    /// <summary>
+    /// 씬 전환 시 호출하여 Persistent로 등록되지 않은 에셋 캐시를 모두 해제합니다.
+    /// </summary>
+    internal void ReleaseAll()
+    {
+        List<string> keysToRemove = _handlePacket.Keys
+            .Where(k => !_persistentAddresses.Contains(k))
+            .ToList();
+
+        foreach (string key in keysToRemove)
+        {
+            if (_handlePacket.TryGetValue(key, out AsyncOperationHandle handle))
+            {
+                Addressables.Release(handle);
+            }
+            _handlePacket.Remove(key);
+            _addressablePacket.Remove(key);
+        }
     }
 
     /// <summary>

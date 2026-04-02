@@ -22,6 +22,10 @@ namespace Puzzle.Core
         /// <summary> 결정론적 리플레이를 위한 난수 시드 </summary>
         public int randomSeed;
 
+        /// <summary> blockId → BlockData 빠른 조회용 캐시 (최초 GetBlock 호출 시 구축) </summary>
+        [NonSerialized]
+        private Dictionary<string, BlockData> _blockCache;
+
         /// <summary>
         /// 현재 설정된 게임 규칙 데이터를 반환합니다.
         /// </summary>
@@ -42,7 +46,20 @@ namespace Puzzle.Core
             {
                 return null;
             }
-            return blocks.Find(b => b.blockId == blockId);
+
+            if (_blockCache == null)
+            {
+                _blockCache = new Dictionary<string, BlockData>(blocks.Count);
+                for (int i = 0; i < blocks.Count; i++)
+                {
+                    if (blocks[i] != null && !_blockCache.ContainsKey(blocks[i].blockId))
+                    {
+                        _blockCache.Add(blocks[i].blockId, blocks[i]);
+                    }
+                }
+            }
+
+            return _blockCache.TryGetValue(blockId, out BlockData data) ? data : null;
         }
     }
 

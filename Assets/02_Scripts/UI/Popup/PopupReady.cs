@@ -18,19 +18,13 @@ public class PopupReady : PopupHandler
         string rulePath = "LinkMatchRule";
         string stagePath = "Stage";
 
-        StageInjection.Instance.MakeGameSpec(rulePath, stagePath);
+        if (!StageInjection.Instance.MakeGameSpec(rulePath, stagePath))
+        {
+            Debug.LogError("[PopupReady] GameSpec 준비에 실패했습니다.");
+            return;
+        }
 
-        GameSpec spec = StageInjection.Instance.GetGameSpec();
-        if (spec != null &&
-                string.IsNullOrEmpty(spec.rule.ruleId) == false &&
-                    spec.stageData != null)
-        {
-            Main.Instance.MoveScene(SceneEnum.LobbyScene, SceneEnum.GameScene);
-        }
-        else
-        {
-            Debug.LogError("게임 씬으로 이동하기 전 GameSpec 준비에 실패했습니다.");
-        }
+        Main.Instance.MoveScene(SceneEnum.LobbyScene, SceneEnum.GameScene);
     }
 
     /// <summary>
@@ -66,12 +60,9 @@ public class PopupReady : PopupHandler
         }
 
         // 유저 게임 데이터 준비 (리플레이와 동일한 규칙/스테이지 사용)
-        StageInjection.Instance.MakeGameSpec(replayData.ruleAddress, replayData.stageAddress);
-
-        GameSpec spec = StageInjection.Instance.GetGameSpec();
-        if (spec == null || string.IsNullOrEmpty(spec.rule.ruleId) || spec.stageData == null)
+        if (!StageInjection.Instance.MakeGameSpec(replayData.ruleAddress, replayData.stageAddress))
         {
-            Debug.LogError("게임 씬으로 이동하기 전 GameSpec 준비에 실패했습니다.");
+            Debug.LogError("[PopupReady] 리플레이용 GameSpec 준비에 실패했습니다.");
             return;
         }
 

@@ -31,6 +31,9 @@ public class PoolManager : MonoBehaviour
     /// <summary> 생성된 인스턴스가 어떤 프리팹으로부터 만들어졌는지 기록 (반납 시 활용) </summary>
     private Dictionary<GameObject, GameObject> _instanceToPrefab = new Dictionary<GameObject, GameObject>();
 
+    /// <summary> 프리팹당 풀에 보관할 수 있는 최대 오브젝트 수 </summary>
+    private const int MAX_POOL_SIZE = 50;
+
     /// <summary>
     /// 특정 프리팹의 인스턴스를 가져옵니다. 풀에 있다면 꺼내오고, 없다면 새로 생성합니다.
     /// </summary>
@@ -68,7 +71,7 @@ public class PoolManager : MonoBehaviour
         else
         {
             instance = Instantiate(prefab, parent);
-            _instanceToPrefab.Add(instance, prefab);
+            _instanceToPrefab[instance] = prefab;
         }
 
         return instance;
@@ -87,14 +90,20 @@ public class PoolManager : MonoBehaviour
 
         if (_instanceToPrefab.TryGetValue(instance, out GameObject prefab))
         {
-            instance.SetActive(false);
-            instance.transform.SetParent(this.transform);
-            
             if (!_pools.ContainsKey(prefab))
             {
                 _pools.Add(prefab, new Queue<GameObject>());
             }
-            
+
+            if (_pools[prefab].Count >= MAX_POOL_SIZE)
+            {
+                _instanceToPrefab.Remove(instance);
+                Destroy(instance);
+                return;
+            }
+
+            instance.SetActive(false);
+            instance.transform.SetParent(this.transform);
             _pools[prefab].Enqueue(instance);
         }
         else

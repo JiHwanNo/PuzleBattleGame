@@ -90,39 +90,41 @@ public class Main : MonoBehaviour
     }
 
     /// <summary>
-    /// 씬이 로드될 때마다 중복 EventSystem을 찾아 제거합니다.
+    /// Main 오브젝트 파괴 시 이벤트 구독을 해제합니다.
+    /// </summary>
+    private void OnDestroy()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    /// <summary>
+    /// 씬이 로드될 때마다 해당 씬 내 중복 EventSystem과 AudioListener를 제거합니다.
+    /// SharedScene과 DontDestroyOnLoad에 포함된 것은 유지합니다.
     /// </summary>
     /// <param name="scene">로드된 씬</param>
     /// <param name="mode">씬 로드 모드</param>
     private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, LoadSceneMode mode)
     {
-        // 중복 EventSystem 제거 (SharedScene 또는 DontDestroyOnLoad의 것은 유지)
-        EventSystem[] eventSystems = FindObjectsByType<EventSystem>(FindObjectsSortMode.None);
-        if (eventSystems.Length > 1)
+        // SharedScene이나 DontDestroyOnLoad 씬은 정리 대상이 아님
+        if (scene.name == SHARED_SCENE_NAME || scene.name == "DontDestroyOnLoad")
         {
-            for (int i = 0; i < eventSystems.Length; i++)
-            {
-                string sceneName = eventSystems[i].gameObject.scene.name;
-                if (sceneName == SHARED_SCENE_NAME || sceneName == "DontDestroyOnLoad")
-                {
-                    continue;
-                }
-                Destroy(eventSystems[i].gameObject);
-            }
+            return;
         }
 
-        // 중복 AudioListener 제거 (SharedScene 또는 DontDestroyOnLoad의 것은 유지)
-        AudioListener[] audioListeners = FindObjectsByType<AudioListener>(FindObjectsSortMode.None);
-        if (audioListeners.Length > 1)
+        // 새로 로드된 씬의 루트 오브젝트에서만 중복 컴포넌트 탐색
+        GameObject[] rootObjects = scene.GetRootGameObjects();
+        for (int i = 0; i < rootObjects.Length; i++)
         {
-            for (int i = 0; i < audioListeners.Length; i++)
+            EventSystem es = rootObjects[i].GetComponentInChildren<EventSystem>(true);
+            if (es != null)
             {
-                string sceneName = audioListeners[i].gameObject.scene.name;
-                if (sceneName == SHARED_SCENE_NAME || sceneName == "DontDestroyOnLoad")
-                {
-                    continue;
-                }
-                Destroy(audioListeners[i].gameObject);
+                Destroy(es.gameObject);
+            }
+
+            AudioListener al = rootObjects[i].GetComponentInChildren<AudioListener>(true);
+            if (al != null)
+            {
+                Destroy(al.gameObject);
             }
         }
     }
@@ -138,6 +140,7 @@ public class Main : MonoBehaviour
             return;
         }
 
+        _isMovingScene = true;
         StartCoroutine(CoMoveScene(preScene, nextScene));
     }
 
@@ -148,7 +151,6 @@ public class Main : MonoBehaviour
     /// <param name="next">로드할 다음 씬</param>
     private IEnumerator CoMoveScene(SceneEnum pre, SceneEnum next)
     {
-            _isMovingScene = true;
 
         // 0. 열려있는 모든 도메인(팝업, 탭) 정리
         if (DomainManager.Instance != null)
@@ -160,7 +162,9 @@ public class Main : MonoBehaviour
         AsyncOperation loadingOp = SceneManager.LoadSceneAsync(SceneEnum.LoadingScene.ToString(), LoadSceneMode.Additive);
         yield return loadingOp;
 
-        // 2. 이전 씬 언로드
+        // 2. 에셋 캐시 정리 후 이전 씬 언로드
+        AssetManager.Instance.ReleaseAll();
+
         if (pre != SceneEnum.None)
         {
             AsyncOperation unloadOp = SceneManager.UnloadSceneAsync(pre.ToString());

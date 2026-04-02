@@ -39,6 +39,16 @@ public class TabBase : MonoBehaviour, IDomainNode
     public bool IsAnimating { get; private set; }
 
     /// <summary>
+    /// 오브젝트 파괴 시 이벤트 구독자를 정리합니다.
+    /// </summary>
+    private void OnDestroy()
+    {
+        StopAllCoroutines();
+        OnActivated = null;
+        OnDeactivated = null;
+    }
+
+    /// <summary>
     /// 초기화 시 탭 이름이 설정되지 않았으면 게임오브젝트 이름으로 자동 설정합니다.
     /// </summary>
     private void Awake()

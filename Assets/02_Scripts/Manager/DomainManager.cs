@@ -39,6 +39,15 @@ public class DomainManager : MonoBehaviour
     /// <summary> 현재 씬 이름 (도메인 경로의 루트) </summary>
     private string _currentSceneName = "";
 
+    /// <summary> CurrentPath 재구성용 재사용 StringBuilder </summary>
+    private readonly StringBuilder _pathBuilder = new StringBuilder(128);
+
+    /// <summary> CurrentPath 캐시 (스택 변경 시 무효화) </summary>
+    private string _cachedPath;
+
+    /// <summary> 캐시 무효화 여부 </summary>
+    private bool _pathDirty = true;
+
     /// <summary> 현재 도메인 항목이 존재하는지 여부 </summary>
     public bool HasDomain
     {
@@ -65,17 +74,24 @@ public class DomainManager : MonoBehaviour
     {
         get
         {
-            StringBuilder sb = new StringBuilder();
-            sb.Append("/");
-            sb.Append(_currentSceneName);
+            if (!_pathDirty)
+            {
+                return _cachedPath;
+            }
+
+            _pathBuilder.Clear();
+            _pathBuilder.Append("/");
+            _pathBuilder.Append(_currentSceneName);
 
             for (int i = 0; i < _domainStack.Count; i++)
             {
-                sb.Append("/");
-                sb.Append(_domainStack[i].DomainName);
+                _pathBuilder.Append("/");
+                _pathBuilder.Append(_domainStack[i].DomainName);
             }
 
-            return sb.ToString();
+            _cachedPath = _pathBuilder.ToString();
+            _pathDirty = false;
+            return _cachedPath;
         }
     }
 
@@ -113,6 +129,7 @@ public class DomainManager : MonoBehaviour
         _activePopupController.CreatePopup(popupName, (popup) =>
         {
             _domainStack.Add(popup);
+            _pathDirty = true;
             popup.Open();
 
             Debug.Log($"[DomainManager] 팝업 열림: {popupName} | 경로: {CurrentPath}");
@@ -140,6 +157,7 @@ public class DomainManager : MonoBehaviour
         _activeTabController.ActivateTab(tabName, (tab) =>
         {
             _domainStack.Add(tab);
+            _pathDirty = true;
 
             Debug.Log($"[DomainManager] 탭 열림: {tabName} | 경로: {CurrentPath}");
             onOpened?.Invoke(tab);
@@ -370,6 +388,7 @@ public class DomainManager : MonoBehaviour
     {
         IDomainNode node = _domainStack[index];
         _domainStack.RemoveAt(index);
+        _pathDirty = true;
 
         if (node is PopupBase popup)
         {
@@ -377,12 +396,20 @@ public class DomainManager : MonoBehaviour
             {
                 _activePopupController.DestroyPopup(popup);
             }
+            else
+            {
+                Debug.LogWarning($"[DomainManager] 활성 PopupController가 없어 팝업을 정리할 수 없습니다: {popup.PopupName}");
+            }
         }
         else if (node is TabBase tab)
         {
             if (_activeTabController != null)
             {
                 _activeTabController.DeactivateTab(tab);
+            }
+            else
+            {
+                Debug.LogWarning($"[DomainManager] 활성 TabController가 없어 탭을 정리할 수 없습니다: {tab.TabName}");
             }
         }
     }
@@ -420,6 +447,7 @@ public class DomainManager : MonoBehaviour
         if (controllerName != "Shared")
         {
             _currentSceneName = controllerName;
+            _pathDirty = true;
         }
     }
 

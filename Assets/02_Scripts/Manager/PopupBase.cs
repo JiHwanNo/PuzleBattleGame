@@ -123,6 +123,8 @@ public class PopupBase : MonoBehaviour, IDomainNode
     private void OnDestroy()
     {
         _currentSequence?.Kill();
+        OnOpened = null;
+        OnClosed = null;
     }
 
     /// <summary>

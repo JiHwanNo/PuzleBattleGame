@@ -28,9 +28,9 @@ public class UIButton : MonoBehaviour
     /// </summary>
     public void OnClickEvent()
     {
-        if (_unityButton == null || string.IsNullOrEmpty(_callbackName))
+        if (_root == null || _unityButton == null || string.IsNullOrEmpty(_callbackName))
         {
-            Debug.LogError($"UIButton_{gameObject.name}: Unity Button or Callback Name is not set.");
+            Debug.LogError($"UIButton_{gameObject.name}: Root, Unity Button, or Callback Name is not set.");
             return;
         }
 

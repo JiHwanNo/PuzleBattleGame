@@ -82,6 +82,12 @@ public class PuzzleBoardView : MonoBehaviour
     /// <summary> 포인트 마커용 스프라이트 </summary>
     private Sprite _circleSprite;
 
+    /// <summary> LineRenderer 갱신 판단을 위한 이전 링크 경로 수 </summary>
+    private int _prevLinkPathCount = 0;
+
+    /// <summary> LineRenderer 갱신 판단을 위한 이전 링크 경로 마지막 좌표 </summary>
+    private GridPos _prevLinkPathLast;
+
 
     /// <summary> 현재 보드가 애니메이션 연출 중인지 여부를 반환합니다. </summary>
     public bool IsAnimating => _isAnimating;
@@ -496,6 +502,15 @@ public class PuzzleBoardView : MonoBehaviour
             var path = linkBoard.GetCurrentLinkPath();
             if (path != null && path.Count > 0)
             {
+                // 경로가 변경되지 않았으면 갱신 생략
+                GridPos lastPos = path[path.Count - 1];
+                if (path.Count == _prevLinkPathCount && lastPos == _prevLinkPathLast)
+                {
+                    return;
+                }
+                _prevLinkPathCount = path.Count;
+                _prevLinkPathLast = lastPos;
+
                 // LineRenderer는 최소 2개 포인트가 필요하므로,
                 // 포인트가 1개일 때는 같은 위치에 2개를 찍어 점으로 표시
                 int pointCount = Mathf.Max(path.Count, 2);
@@ -520,14 +535,22 @@ public class PuzzleBoardView : MonoBehaviour
             }
             else
             {
-                _lineRenderer.positionCount = 0;
-                HideAllLinkPointMarkers();
+                if (_prevLinkPathCount != 0)
+                {
+                    _prevLinkPathCount = 0;
+                    _lineRenderer.positionCount = 0;
+                    HideAllLinkPointMarkers();
+                }
             }
         }
         else
         {
-            _lineRenderer.positionCount = 0;
-            HideAllLinkPointMarkers();
+            if (_prevLinkPathCount != 0)
+            {
+                _prevLinkPathCount = 0;
+                _lineRenderer.positionCount = 0;
+                HideAllLinkPointMarkers();
+            }
         }
     }
 
