@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 
 /// <summary>
@@ -64,6 +65,10 @@ public class Main : MonoBehaviour
         DontDestroyOnLoad(gameObject);
         SceneManager.sceneLoaded += OnSharedSceneLoaded;
         RemoveDuplicateEventSystems();
+
+        // SharedScene의 Awake 시점에 이미 로드되어 있던 씬들의 중복 컴포넌트를 즉시 제거
+        // (OnSharedSceneLoaded보다 먼저 실행되어 EventSystem 중복 경고를 방지)
+        CleanupAllLoadedScenes();
     }
 
 
@@ -78,6 +83,24 @@ public class Main : MonoBehaviour
         {
             SceneManager.SetActiveScene(scene);
             SceneManager.sceneLoaded -= OnSharedSceneLoaded;
+        }
+    }
+
+    /// <summary>
+    /// 현재 로드된 모든 씬을 순회하며 SharedScene이 아닌 씬의 중복 컴포넌트를 제거합니다.
+    /// SharedScene 초기 로드 시 이미 존재하던 씬(예: 에디터에서 TitleScene 직접 플레이)을 정리하기 위해 사용됩니다.
+    /// </summary>
+    private void CleanupAllLoadedScenes()
+    {
+        for (int s = 0; s < SceneManager.sceneCount; s++)
+        {
+            Scene loadedScene = SceneManager.GetSceneAt(s);
+            if (loadedScene.name == SHARED_SCENE_NAME || loadedScene.name == "DontDestroyOnLoad")
+            {
+                continue;
+            }
+
+            CleanupDuplicateComponents(loadedScene);
         }
     }
 
@@ -98,32 +121,53 @@ public class Main : MonoBehaviour
     }
 
     /// <summary>
-    /// 씬이 로드될 때마다 해당 씬 내 중복 EventSystem과 AudioListener를 제거합니다.
+    /// 씬이 로드될 때마다 해당 씬 내 중복 컴포넌트를 제거합니다.
     /// SharedScene과 DontDestroyOnLoad에 포함된 것은 유지합니다.
     /// </summary>
     /// <param name="scene">로드된 씬</param>
     /// <param name="mode">씬 로드 모드</param>
     private void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, LoadSceneMode mode)
     {
-        // SharedScene이나 DontDestroyOnLoad 씬은 정리 대상이 아님
         if (scene.name == SHARED_SCENE_NAME || scene.name == "DontDestroyOnLoad")
         {
             return;
         }
 
-        // 새로 로드된 씬의 루트 오브젝트에서만 중복 컴포넌트 탐색
+        CleanupDuplicateComponents(scene);
+    }
+
+    /// <summary>
+    /// 대상 씬의 루트 오브젝트에서 중복 EventSystem, InputSystemUIInputModule, AudioListener를 제거합니다.
+    /// SharedScene에만 이 컴포넌트들이 유지되도록 보장합니다.
+    /// Destroy()는 프레임 끝에 실행되므로, 컴포넌트를 즉시 비활성화하여 중복 감지 경고를 방지합니다.
+    /// </summary>
+    /// <param name="scene">정리할 대상 씬</param>
+    private void CleanupDuplicateComponents(Scene scene)
+    {
         GameObject[] rootObjects = scene.GetRootGameObjects();
         for (int i = 0; i < rootObjects.Length; i++)
         {
             EventSystem es = rootObjects[i].GetComponentInChildren<EventSystem>(true);
             if (es != null)
             {
+                es.enabled = false;
+                es.gameObject.SetActive(false);
                 Destroy(es.gameObject);
+                continue;
+            }
+
+            InputSystemUIInputModule inputModule = rootObjects[i].GetComponentInChildren<InputSystemUIInputModule>(true);
+            if (inputModule != null)
+            {
+                inputModule.enabled = false;
+                inputModule.gameObject.SetActive(false);
+                Destroy(inputModule.gameObject);
             }
 
             AudioListener al = rootObjects[i].GetComponentInChildren<AudioListener>(true);
             if (al != null)
             {
+                al.enabled = false;
                 Destroy(al.gameObject);
             }
         }

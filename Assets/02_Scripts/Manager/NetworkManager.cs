@@ -28,6 +28,5 @@ public class NetworkManager : MonoBehaviour
         }
 
         _instance = this;
-        DontDestroyOnLoad(gameObject);
     }
 }

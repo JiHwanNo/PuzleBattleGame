@@ -28,6 +28,5 @@ public class LocalizationManager : MonoBehaviour
         }
 
         _instance = this;
-        DontDestroyOnLoad(gameObject);
     }
 }

@@ -107,7 +107,6 @@ public class DomainManager : MonoBehaviour
         }
 
         _instance = this;
-        DontDestroyOnLoad(gameObject);
     }
 
     #region 도메인 열기 / 닫기 / 뒤로가기

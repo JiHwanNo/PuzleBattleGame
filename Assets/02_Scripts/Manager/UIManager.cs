@@ -28,6 +28,5 @@ public class UIManager : MonoBehaviour
         }
 
         _instance = this;
-        DontDestroyOnLoad(gameObject);
     }
 }

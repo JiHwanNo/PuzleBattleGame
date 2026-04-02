@@ -28,6 +28,5 @@ public class SoundManager : MonoBehaviour
         }
 
         _instance = this;
-        DontDestroyOnLoad(gameObject);
     }
 }

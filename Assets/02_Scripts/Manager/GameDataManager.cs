@@ -28,6 +28,5 @@ public class GameDataManager : MonoBehaviour
         }
 
         _instance = this;
-        DontDestroyOnLoad(gameObject);
     }
 }
