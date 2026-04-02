@@ -175,7 +175,10 @@ GameSpec
 
 ## ReplayData JSON 구조
 
-파일 위치: `Assets/05_Table/Replay/replay_{timestamp}.json`
+파일 위치:
+- **에디터**: `Assets/05_Table/Replay/replay_{timestamp}.json`
+- **빌드**: `Application.persistentDataPath/Replay/replay_{timestamp}.json`
+
 게임 종료 시 `ReplayStorage.Save()`에 의해 자동 생성됨.
 
 ```json

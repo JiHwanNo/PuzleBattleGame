@@ -75,11 +75,16 @@ namespace Puzzle.Core
 
         /// <summary>
         /// 리플레이 저장 디렉터리의 전체 경로를 반환합니다.
+        /// 에디터에서는 프로젝트 내부(Assets/05_Table/Replay), 빌드에서는 persistentDataPath를 사용합니다.
         /// </summary>
         /// <returns>리플레이 디렉터리 경로</returns>
         public static string GetReplayDirectoryPath()
         {
+#if UNITY_EDITOR
             return Path.Combine(Application.dataPath, "05_Table", ReplayDirectory);
+#else
+            return Path.Combine(Application.persistentDataPath, ReplayDirectory);
+#endif
         }
     }
 }

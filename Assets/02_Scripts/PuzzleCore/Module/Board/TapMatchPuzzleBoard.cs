@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Puzzle.Core
 {
@@ -27,6 +26,15 @@ namespace Puzzle.Core
         private ulong _frameCount;
         internal GameSpec gameSpec;
         private uint _currentOrderIndex = 0;
+
+        /// <summary> GetConnectedBlocks() 재사용 HashSet (매 호출마다 할당 방지) </summary>
+        private HashSet<GridPos> _connectedBuffer = new HashSet<GridPos>();
+
+        /// <summary> GetConnectedBlocks() 재사용 Queue (매 호출마다 할당 방지) </summary>
+        private Queue<GridPos> _floodFillQueue = new Queue<GridPos>();
+
+        /// <summary> GetConnectedBlocks() 인접 방향 배열 (매 호출마다 할당 방지) </summary>
+        private static readonly GridPos[] _adjacentDirs = { GridPos.Up, GridPos.Down, GridPos.Left, GridPos.Right };
 
         public void Initialize(GameSpec spec)
         {
@@ -173,37 +181,36 @@ namespace Puzzle.Core
 
         /// <summary>
         /// Flood Fill 알고리즘을 사용하여 인접한 동일 블럭들을 모두 찾습니다.
+        /// 사전 할당된 컬렉션을 재사용하여 GC 할당을 방지합니다.
         /// </summary>
         private HashSet<GridPos> GetConnectedBlocks(GridPos start, string targetId)
         {
-            HashSet<GridPos> matched = new HashSet<GridPos>();
-            Queue<GridPos> queue = new Queue<GridPos>();
+            _connectedBuffer.Clear();
+            _floodFillQueue.Clear();
 
-            queue.Enqueue(start);
-            matched.Add(start);
+            _floodFillQueue.Enqueue(start);
+            _connectedBuffer.Add(start);
 
-            GridPos[] dirs = { GridPos.Up, GridPos.Down, GridPos.Left, GridPos.Right };
-
-            while (queue.Count > 0)
+            while (_floodFillQueue.Count > 0)
             {
-                GridPos curr = queue.Dequeue();
+                GridPos curr = _floodFillQueue.Dequeue();
 
-                foreach (var dir in dirs)
+                for (int i = 0; i < _adjacentDirs.Length; i++)
                 {
-                    GridPos next = curr + dir;
-                    if (!matched.Contains(next))
+                    GridPos next = curr + _adjacentDirs[i];
+                    if (!_connectedBuffer.Contains(next))
                     {
                         var nextCell = GetCell(next);
                         if (nextCell?.Block != null && nextCell.Block.GetBlockId() == targetId)
                         {
-                            matched.Add(next);
-                            queue.Enqueue(next);
+                            _connectedBuffer.Add(next);
+                            _floodFillQueue.Enqueue(next);
                         }
                     }
                 }
             }
 
-            return matched;
+            return _connectedBuffer;
         }
 
         public void Update()
@@ -343,7 +350,13 @@ namespace Puzzle.Core
 
         public List<BoardViewAction> FetchActions()
         {
-            var res = _views.OrderBy(v => v.frame).ThenBy(v => v.orderIndex).ToList();
+            // LINQ 대신 List.Sort로 GC 할당 방지
+            _views.Sort((a, b) =>
+            {
+                int cmp = a.frame.CompareTo(b.frame);
+                return cmp != 0 ? cmp : a.orderIndex.CompareTo(b.orderIndex);
+            });
+            var res = new List<BoardViewAction>(_views);
             _views.Clear();
             return res;
         }

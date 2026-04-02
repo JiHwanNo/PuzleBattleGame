@@ -510,7 +510,13 @@ namespace Puzzle.Core
         public List<BoardViewAction> FetchActions()
         {
             // 프레임 우선, 프레임이 같다면 orderIndex가 작은 순서대로 정렬하여 반환
-            var res = _views.OrderBy(v => v.frame).ThenBy(v => v.orderIndex).ToList();
+            // LINQ 대신 List.Sort로 GC 할당 방지
+            _views.Sort((a, b) =>
+            {
+                int cmp = a.frame.CompareTo(b.frame);
+                return cmp != 0 ? cmp : a.orderIndex.CompareTo(b.orderIndex);
+            });
+            var res = new List<BoardViewAction>(_views);
             _views.Clear();
             return res;
         }

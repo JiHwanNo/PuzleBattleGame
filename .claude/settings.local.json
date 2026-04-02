@@ -9,7 +9,8 @@
       "Bash(find /c/Users/jihwan/Documents/Game/PuzleBattleGame/Assets/03_Prefab -type f -name *.prefab)",
       "Bash(ls -la /c/Users/jihwan/Documents/Game/PuzleBattleGame/Assets/02_Scripts/Manager/*.cs)",
       "Bash(ls:*)",
-      "Bash(xargs -I {} basename {})"
+      "Bash(xargs -I {} basename {})",
+      "Bash(grep -E \"\\\\.md$\")"
     ]
   }
 }

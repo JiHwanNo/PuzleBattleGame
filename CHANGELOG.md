@@ -70,6 +70,10 @@
 
 ## 최적화
 
+- **PuzzleBoardView LINQ 전면 제거**: Update 내 `GroupBy/OrderBy/Where` → 수동 그룹화/분류로 매 프레임 GC 할당 완전 제거, `System.Linq` using 삭제
+- **FetchActions() LINQ 제거**: 3개 보드(ThreeMatch, Link, TapMatch) 모두 `OrderBy().ThenBy().ToList()` → `List.Sort()` 인플레이스 정렬로 변경
+- **TapMatchPuzzleBoard Flood Fill 최적화**: `GetConnectedBlocks()`에서 매 호출 `new HashSet/Queue` → 멤버 필드 재사용 + `Clear()`
+- **LinkPuzzleBoard.GetCurrentLinkPath() 최적화**: 매 프레임 `new List` 복사 → `IReadOnlyList` 원본 참조 반환
 - **AssetManager 메모리 관리**: `AsyncOperationHandle` 보관 + `ReleaseAll()` 씬 전환 시 에셋 캐시 일괄 해제, `MarkPersistent()` 공용 에셋 유지
 - **GameSpec.GetBlock() O(1) 캐싱**: `List.Find()` O(n) → `Dictionary<string, BlockData>` 최초 호출 시 구축
 - **FindMatches() GC 제거**: 호출마다 `new HashSet` → 필드 `_matchBuffer` 재사용 + `Clear()`
@@ -82,6 +86,8 @@
 
 ## 버그 수정
 
+- **PuzzleGameController.GetPointerPosition() null 크래시 수정**: `Mouse.current`가 null일 때 `position.ReadValue()` 호출 시 NullReferenceException → null 체크 추가
+- **ReplayStorage 모바일 저장 경로 수정**: `Application.dataPath` (읽기 전용) → 빌드 시 `Application.persistentDataPath` 사용, 에디터에서는 기존 경로 유지
 - **Main.cs 이벤트 릭 수정**: `OnSceneLoaded` 구독 → `OnDestroy`에서 해제 추가
 - **Main.cs 씬 전환 중복 방지**: `_isMovingScene` 플래그를 코루틴 시작 전 즉시 설정
 - **UIButton null 체크**: `_root` 미할당 시 `SendMessage()` 호출 전 null 체크 추가
@@ -90,6 +96,13 @@
 - **LinkPuzzleBoard 상태 루프**: Falling 후 자기 자신으로 재설정 → Waiting으로 즉시 전환
 - **DomainManager 경고 로그**: `RemoveDomainAt`에서 컨트롤러 null 시 경고 로그 추가
 - **StageInjection 반환값**: `MakeGameSpec()` void → bool 반환, 로드 실패 시 `_gameSpec = null` + `false` 반환
+
+## 문서
+
+- **MAP.md 생성**: 문서 네비게이션 허브, 작업별 빠른 경로 + 주요 소스 파일 위치 매핑
+- **INGAME.md 애니메이션 시간 갱신**: 0.132s → 0.075s (코드와 동기화)
+- **SCENE.md AssetManager API 정확도 개선**: `AssetArguments<T>` 구조체 기반 시그니처, `MarkPersistent`/`ReleaseAll` 추가
+- **DATA.md 리플레이 경로 설명 갱신**: 에디터/빌드 경로 분리 명시
 
 ## 안정성
 

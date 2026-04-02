@@ -1,6 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Linq;
+
 using Puzzle.Core;
 using System.Collections;
 
@@ -476,15 +476,8 @@ public class PuzzleBoardView : MonoBehaviour
         List<BoardViewAction> actions = _board.FetchActions();
         if (actions != null && actions.Count > 0)
         {
-            var groupedActions = actions
-                .GroupBy(a => new { a.frame, a.orderIndex })
-                .OrderBy(g => g.Key.frame)
-                .ThenBy(g => g.Key.orderIndex);
-
-            foreach (var group in groupedActions)
-            {
-                _actionQueue.Enqueue(group.ToList());
-            }
+            // LINQ 대신 수동 그룹화로 GC 할당 방지
+            GroupActionsByFrameAndOrder(actions);
         }
 
         if (!_isAnimating && _actionQueue.Count > 0)
@@ -499,7 +492,7 @@ public class PuzzleBoardView : MonoBehaviour
 
         if (_board is LinkPuzzleBoard linkBoard)
         {
-            var path = linkBoard.GetCurrentLinkPath();
+            IReadOnlyList<GridPos> path = linkBoard.GetCurrentLinkPath();
             if (path != null && path.Count > 0)
             {
                 // 경로가 변경되지 않았으면 갱신 생략
@@ -564,7 +557,7 @@ public class PuzzleBoardView : MonoBehaviour
     /// 링크 경로의 각 연결 지점에 원형 포인트 마커를 표시합니다.
     /// </summary>
     /// <param name="path">현재 링크 경로 좌표 리스트</param>
-    private void UpdateLinkPointMarkers(List<GridPos> path)
+    private void UpdateLinkPointMarkers(IReadOnlyList<GridPos> path)
     {
         // 필요한 만큼 마커 오브젝트 확보
         while (_linkPointMarkers.Count < path.Count)
@@ -611,6 +604,43 @@ public class PuzzleBoardView : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 뷰 액션 리스트를 (frame, orderIndex) 기준으로 그룹화하여 큐에 넣습니다.
+    /// LINQ GroupBy/OrderBy 대신 수동 정렬/그룹화로 GC 할당을 방지합니다.
+    /// </summary>
+    /// <param name="actions">그룹화할 뷰 액션 리스트 (정렬 완료 상태)</param>
+    private void GroupActionsByFrameAndOrder(List<BoardViewAction> actions)
+    {
+        // FetchActions()에서 이미 frame → orderIndex 순으로 정렬되어 반환됨
+        List<BoardViewAction> currentGroup = new List<BoardViewAction>();
+        uint prevFrame = actions[0].frame;
+        uint prevOrder = actions[0].orderIndex;
+
+        for (int i = 0; i < actions.Count; i++)
+        {
+            BoardViewAction action = actions[i];
+            if (action.frame != prevFrame || action.orderIndex != prevOrder)
+            {
+                _actionQueue.Enqueue(currentGroup);
+                currentGroup = new List<BoardViewAction>();
+                prevFrame = action.frame;
+                prevOrder = action.orderIndex;
+            }
+            currentGroup.Add(action);
+        }
+
+        if (currentGroup.Count > 0)
+        {
+            _actionQueue.Enqueue(currentGroup);
+        }
+    }
+
+    /// <summary> ProcessActionQueue 내부에서 이동 액션을 재사용하는 임시 리스트 </summary>
+    private readonly List<BoardViewAction> _tempMovementActions = new List<BoardViewAction>();
+
+    /// <summary> ProcessActionQueue 내부에서 기타 액션을 재사용하는 임시 리스트 </summary>
+    private readonly List<BoardViewAction> _tempOtherActions = new List<BoardViewAction>();
+
     private IEnumerator ProcessActionQueue()
     {
         _isAnimating = true;
@@ -618,22 +648,36 @@ public class PuzzleBoardView : MonoBehaviour
         while (_actionQueue.Count > 0)
         {
             List<BoardViewAction> actionGroup = _actionQueue.Dequeue();
-            
-            var movementActions = actionGroup.Where(a => a.type == ViewType.Move || a.type == ViewType.Fall || a.type == ViewType.CreateAndFall).ToList();
-            if (movementActions.Count > 0)
+
+            // LINQ 대신 수동 분류로 GC 할당 방지
+            _tempMovementActions.Clear();
+            _tempOtherActions.Clear();
+            for (int i = 0; i < actionGroup.Count; i++)
             {
-                yield return StartCoroutine(ExecuteBatchMovement(movementActions));
+                BoardViewAction action = actionGroup[i];
+                if (action.type == ViewType.Move || action.type == ViewType.Fall || action.type == ViewType.CreateAndFall)
+                {
+                    _tempMovementActions.Add(action);
+                }
+                else
+                {
+                    _tempOtherActions.Add(action);
+                }
             }
 
-            var otherActions = actionGroup.Where(a => a.type != ViewType.Move && a.type != ViewType.Fall && a.type != ViewType.CreateAndFall).ToList();
-            if (otherActions.Count > 0)
+            if (_tempMovementActions.Count > 0)
+            {
+                yield return StartCoroutine(ExecuteBatchMovement(_tempMovementActions));
+            }
+
+            if (_tempOtherActions.Count > 0)
             {
                 int completedCount = 0;
-                int totalCount = otherActions.Count;
+                int totalCount = _tempOtherActions.Count;
 
-                foreach (var action in otherActions)
+                for (int i = 0; i < _tempOtherActions.Count; i++)
                 {
-                    ExecuteSingleAction(action, () => completedCount++);
+                    ExecuteSingleAction(_tempOtherActions[i], () => completedCount++);
                 }
 
                 while (completedCount < totalCount)

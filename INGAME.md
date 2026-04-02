@@ -132,11 +132,12 @@ board.FetchActions()
 ### 애니메이션 시간
 | 종류 | 시간 | Ease |
 |------|------|------|
-| 클릭 | 스케일 1.1x, 2회 yoyo | — |
-| 이동 (Move) | 0.132초 | OutBack |
-| 낙하 (Fall) | 0.132초 | OutQuad |
-| 파괴 (Destroy) | 스케일→0, 0.132초 | InBack |
-| 생성 (Create) | 스케일 0→1, 0.132초 | OutBack |
+| 클릭 | 스케일 1.1x, 0.038초, 2회 yoyo | — |
+| 이동 (Move) | 0.075초 | OutBack |
+| 낙하 (Fall) | 0.075초 | OutQuad |
+| 파괴 (Destroy) | 스케일→0, 0.075초 | InBack |
+| 생성 (Create) | 스케일 0→1, 0.075초 | OutBack |
+| 액션 간 대기 | 0.019초 | — |
 
 ### 좌표 변환 (GetLocalPos)
 - 사각형: 보드 중앙 기준 `(X - width/2, Y - height/2) × cellSize`

@@ -358,7 +358,13 @@ namespace Puzzle.Core
 
         public List<BoardViewAction> FetchActions()
         {
-            var res = _views.OrderBy(v => v.frame).ThenBy(v => v.orderIndex).ToList();
+            // LINQ 대신 List.Sort로 GC 할당 방지
+            _views.Sort((a, b) =>
+            {
+                int cmp = a.frame.CompareTo(b.frame);
+                return cmp != 0 ? cmp : a.orderIndex.CompareTo(b.orderIndex);
+            });
+            var res = new List<BoardViewAction>(_views);
             _views.Clear();
             return res;
         }
@@ -373,10 +379,12 @@ namespace Puzzle.Core
         
         /// <summary>
         /// 뷰(View)에서 LineRenderer를 그리기 위해 현재 연결된 경로를 반환합니다.
+        /// 원본 리스트의 읽기 전용 참조를 반환하여 매 프레임 새 리스트 할당을 방지합니다.
+        /// 반환된 리스트를 외부에서 수정하지 않아야 합니다.
         /// </summary>
-        public List<GridPos> GetCurrentLinkPath()
+        public IReadOnlyList<GridPos> GetCurrentLinkPath()
         {
-            return new List<GridPos>(_linkPath);
+            return _linkPath;
         }
     }
 }

@@ -299,6 +299,10 @@ public class PuzzleGameController : MonoBehaviour
         {
             return Touchscreen.current.primaryTouch.position.ReadValue();
         }
-        return Mouse.current.position.ReadValue();
+        if (Mouse.current != null)
+        {
+            return Mouse.current.position.ReadValue();
+        }
+        return Vector2.zero;
     }
 }
