@@ -59,6 +59,38 @@
 - **ReplayController 배치**: 카메라 기준 우측 상단 자동 축소 배치 (`viewScale`, `margin` 설정)
 - **PuzzleBoardView 확장**: `skipCameraAlign` 플래그, `DrawBoard(board, boardShape?)` 오버로드
 
+## 인게임 UI
+
+- **타이머 UI**: `PuzzleGameController`에 `TMP_Text _timerText` 연동, 초 단위 변경 시에만 갱신 (GC 최소화)
+- **점수 UI**: `PuzzleGameController`에 `TMP_Text _scoreText` 연동, 점수 변경 시에만 갱신
+
+## 애니메이션
+
+- **연출 속도 1.75배 향상**: 블럭 이동/낙하/파괴/생성 0.132s → 0.075s, 클릭 0.066s → 0.038s, 액션 간 대기 0.033s → 0.019s
+
+## 최적화
+
+- **AssetManager 메모리 관리**: `AsyncOperationHandle` 보관 + `ReleaseAll()` 씬 전환 시 에셋 캐시 일괄 해제, `MarkPersistent()` 공용 에셋 유지
+- **GameSpec.GetBlock() O(1) 캐싱**: `List.Find()` O(n) → `Dictionary<string, BlockData>` 최초 호출 시 구축
+- **FindMatches() GC 제거**: 호출마다 `new HashSet` → 필드 `_matchBuffer` 재사용 + `Clear()`
+- **ContactFilter2D 캐싱**: 매 프레임 `new ContactFilter2D().NoFilter()` → `static readonly` 필드
+- **LineRenderer 갱신 최적화**: 경로 변경 시에만 `SetPosition`/마커 업데이트 (이전 경로 캐싱)
+- **PoolManager 풀 크기 제한**: 최대 50개 초과 시 Destroy 처리, `_instanceToPrefab` 중복 키 안전 처리
+- **DomainManager.CurrentPath 캐싱**: StringBuilder 재사용 + dirty 플래그로 불필요한 문자열 재구성 방지
+- **Main.OnSceneLoaded 탐색 범위 축소**: `FindObjectsByType` 전체 탐색 → `scene.GetRootGameObjects()` 해당 씬만 탐색
+- **LobbyTabController 빈 콜백 제거**: 빈 `Start()`/`Update()` 삭제로 Unity 콜백 오버헤드 제거
+
+## 버그 수정
+
+- **Main.cs 이벤트 릭 수정**: `OnSceneLoaded` 구독 → `OnDestroy`에서 해제 추가
+- **Main.cs 씬 전환 중복 방지**: `_isMovingScene` 플래그를 코루틴 시작 전 즉시 설정
+- **UIButton null 체크**: `_root` 미할당 시 `SendMessage()` 호출 전 null 체크 추가
+- **PopupBase 이벤트 정리**: `OnDestroy`에서 `OnOpened`/`OnClosed` 이벤트 null 초기화
+- **TabBase 정리 누락**: `OnDestroy` 추가 — `StopAllCoroutines()` + 이벤트 초기화
+- **LinkPuzzleBoard 상태 루프**: Falling 후 자기 자신으로 재설정 → Waiting으로 즉시 전환
+- **DomainManager 경고 로그**: `RemoveDomainAt`에서 컨트롤러 null 시 경고 로그 추가
+- **StageInjection 반환값**: `MakeGameSpec()` void → bool 반환, 로드 실패 시 `_gameSpec = null` + `false` 반환
+
 ## 안정성
 
 - **초기화**: GameSpec 주입 시 데이터 누락 체크 (Null 참조 방지)

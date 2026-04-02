@@ -642,7 +642,7 @@ public class PuzzleBoardView : MonoBehaviour
                 }
             }
 
-            yield return new WaitForSeconds(0.033f);
+            yield return new WaitForSeconds(0.019f);
         }
 
         _isAnimating = false;

@@ -147,7 +147,7 @@ public class PuzzleBlockView : MonoBehaviour
     /// </summary>
     public void PlayClickAnimation(Action onComplete)
     {
-        transform.DOScale(1.1f, 0.066f).SetLoops(2, LoopType.Yoyo).OnComplete(() => onComplete?.Invoke());
+        transform.DOScale(1.1f, 0.038f).SetLoops(2, LoopType.Yoyo).OnComplete(() => onComplete?.Invoke());
     }
 
     /// <summary>
@@ -155,7 +155,7 @@ public class PuzzleBlockView : MonoBehaviour
     /// </summary>
     public void PlayMoveAnimation(Vector3 targetLocalPos, Action onComplete)
     {
-        transform.DOLocalMove(targetLocalPos, 0.132f).SetEase(Ease.OutBack).OnComplete(() => onComplete?.Invoke());
+        transform.DOLocalMove(targetLocalPos, 0.075f).SetEase(Ease.OutBack).OnComplete(() => onComplete?.Invoke());
     }
 
     /// <summary>
@@ -163,7 +163,7 @@ public class PuzzleBlockView : MonoBehaviour
     /// </summary>
     public void PlayFallAnimation(Vector3 targetLocalPos, Action onComplete)
     {
-        float duration = 0.132f; // 거리와 무관하게 동일한 시간으로 떨어지게 하거나 거리 비례로 할 수 있습니다.
+        float duration = 0.075f;
         transform.DOLocalMove(targetLocalPos, duration).SetEase(Ease.OutQuad).OnComplete(() => onComplete?.Invoke());
     }
 
@@ -172,7 +172,7 @@ public class PuzzleBlockView : MonoBehaviour
     /// </summary>
     public void PlayDestroyAnimation(Action onComplete)
     {
-        transform.DOScale(0f, 0.132f).SetEase(Ease.InBack).OnComplete(() => onComplete?.Invoke());
+        transform.DOScale(0f, 0.075f).SetEase(Ease.InBack).OnComplete(() => onComplete?.Invoke());
     }
 
     /// <summary>
@@ -181,7 +181,7 @@ public class PuzzleBlockView : MonoBehaviour
     public void PlayCreateAnimation(Action onComplete)
     {
         transform.localScale = Vector3.zero;
-        transform.DOScale(1.0f, 0.132f).SetEase(Ease.OutBack).OnComplete(() => onComplete?.Invoke());
+        transform.DOScale(1.0f, 0.075f).SetEase(Ease.OutBack).OnComplete(() => onComplete?.Invoke());
     }
 
     /// <summary>
