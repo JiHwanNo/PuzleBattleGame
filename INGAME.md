@@ -112,12 +112,18 @@ BaseBlock (추상) — State: Idle, Selected, Moving, Matched, Falling, None
 ### 액션 처리 흐름
 ```
 board.FetchActions()
-  → List<BoardViewAction> (frame + orderIndex 순서)
-    → 그룹화 (같은 frame+order는 동시 실행)
+  → List<BoardViewAction> (frame + orderIndex 순서, List.Sort 불안정 정렬)
+    → GroupActionsByFrameAndOrder() 수동 그룹화 (같은 frame+order는 동시 실행)
       → ProcessActionQueue 코루틴
         → ExecuteBatchMovement (Move, Fall, CreateAndFall)
         → ExecuteSingleAction (Destroy, Create)
 ```
+
+### ExecuteBatchMovement 처리 순서 규칙
+- **반드시 Move/Fall을 먼저 처리한 뒤 CreateAndFall을 처리**해야 한다.
+- Fall과 CreateAndFall은 같은 `orderIndex`(fallOrder)로 추가되므로 불안정 정렬 시 순서가 뒤바뀔 수 있음.
+- CreateAndFall은 `targetPosition`에 기존 뷰가 있으면 `HandleImmediateDestroy`로 파괴하는데, Fall이 먼저 실행되어 해당 위치의 뷰를 제거하지 않으면 이동 예정 블럭이 파괴되어 미씽 발생.
+- 따라서 루프를 분리하여 Move/Fall → CreateAndFall 순서를 보장한다.
 
 ### BoardViewAction 구조
 | 필드 | 용도 |
@@ -138,6 +144,12 @@ board.FetchActions()
 | 파괴 (Destroy) | 스케일→0, 0.075초 | InBack |
 | 생성 (Create) | 스케일 0→1, 0.075초 | OutBack |
 | 액션 간 대기 | 0.019초 | — |
+
+### 뷰 액션 처리 시 주의사항
+- `FetchActions()`는 `List.Sort()` 불안정 정렬 사용 → 같은 (frame, orderIndex) 내 액션 순서 미보장.
+- `ProcessFallingAndFilling()`에서 Fall과 CreateAndFall은 **같은 fallOrder**로 추가됨 → 불안정 정렬 시 순서가 뒤바뀔 수 있음.
+- 따라서 `ExecuteBatchMovement`나 `ProcessActionQueue` 등 뷰 액션을 소비하는 코드에서는 **타입별 처리 순서를 명시적으로 분리**해야 함.
+- 새로운 ViewType을 추가할 때도 기존 타입과의 처리 순서 의존성을 반드시 확인할 것.
 
 ### 좌표 변환 (GetLocalPos)
 - 사각형: 보드 중앙 기준 `(X - width/2, Y - height/2) × cellSize`

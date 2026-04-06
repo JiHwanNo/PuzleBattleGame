@@ -86,6 +86,7 @@
 
 ## 버그 수정
 
+- **ExecuteBatchMovement 블럭 미씽 수정**: `FetchActions()`의 `List.Sort()` 불안정 정렬로 Fall과 CreateAndFall(같은 orderIndex) 순서가 뒤바뀌면 `HandleImmediateDestroy`가 이동 예정 블럭을 파괴 → Move/Fall 루프와 CreateAndFall 루프를 분리하여 처리 순서 보장
 - **PuzzleGameController.GetPointerPosition() null 크래시 수정**: `Mouse.current`가 null일 때 `position.ReadValue()` 호출 시 NullReferenceException → null 체크 추가
 - **ReplayStorage 모바일 저장 경로 수정**: `Application.dataPath` (읽기 전용) → 빌드 시 `Application.persistentDataPath` 사용, 에디터에서는 기존 경로 유지
 - **Main.cs 이벤트 릭 수정**: `OnSceneLoaded` 구독 → `OnDestroy`에서 해제 추가

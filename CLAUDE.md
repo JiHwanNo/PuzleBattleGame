@@ -65,6 +65,30 @@ if (condition)
 
 ---
 
+## 주의사항 (Known Pitfalls)
+
+### 정렬 안정성
+- `List.Sort()`는 **불안정 정렬**(Unstable Sort)이다. 동일 키 요소의 상대 순서가 보장되지 않음.
+- 삽입 순서에 의존하는 로직이 있으면 불안정 정렬로 전환 시 반드시 **처리 순서 분리** 또는 **명시적 타이브레이커**를 추가해야 한다.
+- 실제 사례: `FetchActions()`의 LINQ → `List.Sort()` 전환 시, 같은 `orderIndex`를 가진 Fall과 CreateAndFall 순서가 뒤바뀌어 블럭 미씽 버그 발생 → `ExecuteBatchMovement`에서 루프 분리로 해결.
+
+### 뷰 액션 처리 순서
+- `ExecuteBatchMovement`에서 **Move/Fall을 반드시 먼저** 처리한 후 CreateAndFall을 처리해야 함.
+- CreateAndFall은 `targetPosition`에 기존 뷰가 있으면 `HandleImmediateDestroy`로 파괴하는데, Fall이 먼저 실행되어 해당 위치의 뷰를 제거하지 않으면 이동 예정 블럭이 소실됨.
+- 상세: `INGAME.md`의 "ExecuteBatchMovement 처리 순서 규칙" 참고.
+
+### 최적화 작업 시 체크리스트
+- LINQ 제거 시: 정렬 안정성, 지연 평가(Lazy Evaluation) 차이 확인.
+- 컬렉션 재사용 시: 반환된 참조를 외부에서 보관하는 곳이 없는지 확인 (예: `GetConnectedBlocks`의 `_connectedBuffer`).
+- 코루틴에 전달하는 리스트: 코루틴 yield 중 해당 리스트가 외부에서 변경되지 않는지 확인.
+
+### Pool/Addressable 생명주기
+- `PoolManager`는 `DontDestroyOnLoad`로 씬 전환 후에도 풀 인스턴스 유지.
+- `AssetManager.ReleaseAll()`은 씬 전환 시 `MarkPersistent()` 되지 않은 에셋 해제.
+- 풀에 남은 인스턴스가 해제된 에셋을 참조할 수 있으므로, 씬 전환 전후 풀 상태 주의.
+
+---
+
 ## 작업별 참고 문서
 
 | 작업 | 문서 |
