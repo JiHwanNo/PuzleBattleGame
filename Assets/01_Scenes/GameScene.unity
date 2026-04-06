@@ -381,8 +381,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f3810d2218374849be2ae6b1b77e6e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PuzzleBoardView
-  cellAddress: CellPrefab
-  blockAddress: BlockPrefab
   cellRoot: {fileID: 1723673889}
   blockRoot: {fileID: 832379425}
   cellSize: 256
@@ -914,8 +912,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f3810d2218374849be2ae6b1b77e6e7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PuzzleBoardView
-  cellAddress: CellPrefab
-  blockAddress: BlockPrefab
   cellRoot: {fileID: 739492215}
   blockRoot: {fileID: 2131327342}
   cellSize: 256
