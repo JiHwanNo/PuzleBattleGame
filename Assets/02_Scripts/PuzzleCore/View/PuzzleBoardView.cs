@@ -697,18 +697,26 @@ public class PuzzleBoardView : MonoBehaviour
         int totalCount = moveActions.Count;
 
         Dictionary<BoardViewAction, PuzzleBlockView> actionToViewMap = new Dictionary<BoardViewAction, PuzzleBlockView>();
-        
-        foreach (var action in moveActions)
+
+        // Move/Fall을 먼저 처리하여 기존 뷰를 _blockViews에서 제거한 뒤,
+        // CreateAndFall을 처리해야 HandleImmediateDestroy가 이동 예정 블럭을 파괴하지 않음
+        for (int i = 0; i < moveActions.Count; i++)
         {
+            BoardViewAction action = moveActions[i];
             if (action.type == ViewType.Move || action.type == ViewType.Fall)
             {
                 if (_blockViews.TryGetValue(action.position, out PuzzleBlockView view))
                 {
                     actionToViewMap[action] = view;
-                    _blockViews.Remove(action.position); 
+                    _blockViews.Remove(action.position);
                 }
             }
-            else if (action.type == ViewType.CreateAndFall)
+        }
+
+        for (int i = 0; i < moveActions.Count; i++)
+        {
+            BoardViewAction action = moveActions[i];
+            if (action.type == ViewType.CreateAndFall)
             {
                 if (action.blockData != null && _blockPrefabObj != null)
                 {
@@ -718,7 +726,7 @@ public class PuzzleBoardView : MonoBehaviour
                     }
 
                     GameObject blockObj = PoolManager.Instance.Get(_blockPrefabObj, blockRoot);
-                    blockObj.transform.localPosition = GetLocalPos(action.position); 
+                    blockObj.transform.localPosition = GetLocalPos(action.position);
                     blockObj.name = $"Block_{action.targetPosition.X}_{action.targetPosition.Y}";
 
                     PuzzleBlockView bView = blockObj.GetComponent<PuzzleBlockView>();
