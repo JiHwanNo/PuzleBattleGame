@@ -78,7 +78,8 @@ public class PuzzleBlockView : MonoBehaviour
             string blockId = _blockData.GetBlockId();
             string address = $"Block_{blockId}";
 
-            // 레이어 순서 조정 (배경보다 앞에 나오도록)
+            // 풀 재사용 시 레이어가 리셋될 수 있으므로 명시적으로 설정
+            _spriteRenderer.sortingLayerName = "Ingame";
             _spriteRenderer.sortingOrder = 10;
 
             AssetManager.AssetArguments<Sprite> args = new AssetManager.AssetArguments<Sprite>

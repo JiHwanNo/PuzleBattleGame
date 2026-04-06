@@ -10,12 +10,11 @@ using System.Collections;
 /// </summary>
 public class PuzzleBoardView : MonoBehaviour
 {
-    [Header("Asset Addresses")]
     /// <summary> 생성할 셀(배경 타일)의 Addressables 주소 </summary>
-    public string cellAddress = "CellPrefab";
+    private string cellAddress = "CellPrefab";
 
     /// <summary> 생성할 블럭의 Addressables 주소 </summary>
-    public string blockAddress = "BlockPrefab";
+    private string blockAddress = "BlockPrefab";
 
     [Header("Hierarchy Roots")]
     /// <summary> 셀들이 생성될 부모 트랜스폼 </summary>
@@ -839,6 +838,7 @@ public class PuzzleBoardView : MonoBehaviour
             _blockViews.Remove(pos);
             if (view != null && view.gameObject != null)
             {
+                view.transform.localScale = Vector3.one;
                 PoolManager.Instance.Release(view.gameObject);
             }
         }

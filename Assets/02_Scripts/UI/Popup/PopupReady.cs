@@ -11,11 +11,23 @@ public class PopupReady : PopupHandler
 {
 
     /// <summary>
-    /// 시작 버튼 클릭 시 게임 데이터를 준비하고 게임 씬으로 이동합니다.
+    /// 랜덤 퍼즐 모드 선택에 사용할 규칙 에셋 주소 목록입니다.
+    /// </summary>
+    private static readonly string[] RulePaths = new string[]
+    {
+        "LinkMatchRule",
+        "ThreeMatchRule",
+        "TapMatchRule"
+    };
+
+    /// <summary>
+    /// 시작 버튼 클릭 시 랜덤 퍼즐 모드로 게임 데이터를 준비하고 게임 씬으로 이동합니다.
+    /// Link, 3매치, 탭 블라스트 중 하나가 랜덤 선택되며, 제한 시간은 100초입니다.
     /// </summary>
     private void OnClickStart()
     {
-        string rulePath = "LinkMatchRule";
+        // 3가지 퍼즐 모드 중 랜덤 선택
+        string rulePath = RulePaths[Random.Range(0, RulePaths.Length)];
         string stagePath = "Stage";
 
         if (!StageInjection.Instance.MakeGameSpec(rulePath, stagePath))
@@ -24,6 +36,7 @@ public class PopupReady : PopupHandler
             return;
         }
 
+        Debug.Log($"[PopupReady] 선택된 퍼즐 모드: {rulePath}");
         Main.Instance.MoveScene(SceneEnum.LobbyScene, SceneEnum.GameScene);
     }
 
