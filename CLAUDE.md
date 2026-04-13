@@ -67,6 +67,17 @@ if (condition)
 
 ## 주의사항 (Known Pitfalls)
 
+### 데이터 타입 (struct vs class)
+- JSON 직렬화 데이터 중 **struct**: `RuleData`, `ObjectiveData`, `InputRecord`, `InputEndRecord`, `GridPos`
+- JSON 직렬화 데이터 중 **class**: `GameSpec`, `GameRuleContainer`, `BlockData`, `StageData`, `CellData`, `ReplayData`
+- struct는 `== null` 비교 불가. `JsonUtility.FromJson` 실패 시 기본값(zero)이 들어가므로, class 컨테이너의 null 체크로 파싱 실패를 감지해야 한다.
+- 실제 사례: `StageInjection`에서 `ruleContainer.rule == null` 비교 시 `RuleData`가 struct라 CS0019 컴파일 에러 발생.
+
+### Model 레이어 로깅
+- `PuzzleCore/Module/` 하위 클래스는 `UnityEngine` 종속성 금지이므로 `Debug.LogError` 사용 불가.
+- 대신 `Action<string> OnLog` 델리게이트 + `Log()` 메서드로 외부에 로그 전달.
+- 에러 로깅이 필요하면 반드시 `Log()` 메서드를 사용할 것.
+
 ### 정렬 안정성
 - `List.Sort()`는 **불안정 정렬**(Unstable Sort)이다. 동일 키 요소의 상대 순서가 보장되지 않음.
 - 삽입 순서에 의존하는 로직이 있으면 불안정 정렬로 전환 시 반드시 **처리 순서 분리** 또는 **명시적 타이브레이커**를 추가해야 한다.
@@ -81,6 +92,18 @@ if (condition)
 - LINQ 제거 시: 정렬 안정성, 지연 평가(Lazy Evaluation) 차이 확인.
 - 컬렉션 재사용 시: 반환된 참조를 외부에서 보관하는 곳이 없는지 확인 (예: `GetConnectedBlocks`의 `_connectedBuffer`).
 - 코루틴에 전달하는 리스트: 코루틴 yield 중 해당 리스트가 외부에서 변경되지 않는지 확인.
+- Dictionary foreach 대신 List 기반 병렬 인덱스 패턴 고려 (Enumerator GC 할당 방지).
+- `using System.Linq` 제거 후 `.Last()`, `.Any()`, `.Where()` 등 LINQ 확장 메서드가 남아있지 않은지 반드시 확인.
+
+### FetchActions() 리스트 스왑 패턴
+- `FetchActions()`는 내부 `_views` 리스트를 **참조 스왑** 방식으로 반환한다.
+- `var res = _views; _views = new List<>(); return res;` — 복사 비용 없이 소유권 이전.
+- 반환된 리스트는 호출자가 소유하며, 다음 `FetchActions()` 호출과 무관하게 안전하다.
+- 코루틴 yield 중에도 반환된 리스트가 변경되지 않음이 보장된다.
+
+### ExecuteBatchMovement 리스트 기반 매핑
+- `Dictionary<BoardViewAction, PuzzleBlockView>` 대신 `_batchActions` / `_batchViews` 두 개의 `List`를 병렬 인덱스로 사용.
+- Dictionary 열거 시 Enumerator 할당을 방지하며, 처리 순서가 삽입 순서에 의해 보장된다.
 
 ### Pool/Addressable 생명주기
 - `PoolManager`는 `DontDestroyOnLoad`로 씬 전환 후에도 풀 인스턴스 유지.
@@ -98,6 +121,7 @@ if (condition)
 | UI/팝업/탭 (도메인 시스템, UIButton) | `UI.md` |
 | 데이터/설정 (JSON, GameSpec, 추가 방법) | `DATA.md` |
 | 씬/매니저/인프라 (씬 전환, AssetManager, Pool) | `SCENE.md` |
+| 서버 통신/API/공유 DTO/네트워크 레이어 | `SERVER.md` |
 | 변경 이력 | `CHANGELOG.md` |
 
 ### 자주 하는 작업 → 빠른 경로
@@ -111,6 +135,8 @@ if (condition)
 | 탭 추가 | `UI.md` |
 | 씬 전환 수정 | `SCENE.md` |
 | 매니저 구현 (사운드, 네트워크 등) | `SCENE.md` |
+| 서버 API 연동 추가 | `SERVER.md` |
+| 공유 DTO 추가 | `SERVER.md` |
 | 매칭/점수 밸런싱 | `INGAME.md` + `DATA.md` |
 | 애니메이션 수정 | `INGAME.md` |
 | 보드 좌표/레이아웃 | `INGAME.md` |

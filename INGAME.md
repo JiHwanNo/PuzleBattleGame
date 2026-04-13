@@ -113,9 +113,11 @@ BaseBlock (추상) — State: Idle, Selected, Moving, Matched, Falling, None
 ```
 board.FetchActions()
   → List<BoardViewAction> (frame + orderIndex 순서, List.Sort 불안정 정렬)
+  → 내부 _views 리스트를 참조 스왑으로 반환 (복사 비용 없음)
     → GroupActionsByFrameAndOrder() 수동 그룹화 (같은 frame+order는 동시 실행)
       → ProcessActionQueue 코루틴
         → ExecuteBatchMovement (Move, Fall, CreateAndFall)
+          → _batchActions/_batchViews 병렬 리스트로 매핑 (Dictionary 할당 방지)
         → ExecuteSingleAction (Destroy, Create)
 ```
 
@@ -147,9 +149,12 @@ board.FetchActions()
 
 ### 뷰 액션 처리 시 주의사항
 - `FetchActions()`는 `List.Sort()` 불안정 정렬 사용 → 같은 (frame, orderIndex) 내 액션 순서 미보장.
+- `FetchActions()`는 참조 스왑 방식으로 반환 — 반환된 리스트는 호출자 소유, 코루틴 yield 중 안전.
 - `ProcessFallingAndFilling()`에서 Fall과 CreateAndFall은 **같은 fallOrder**로 추가됨 → 불안정 정렬 시 순서가 뒤바뀔 수 있음.
 - 따라서 `ExecuteBatchMovement`나 `ProcessActionQueue` 등 뷰 액션을 소비하는 코드에서는 **타입별 처리 순서를 명시적으로 분리**해야 함.
+- `ExecuteBatchMovement`는 `_batchActions`/`_batchViews` 병렬 리스트를 사용 — Dictionary 열거 GC 할당 방지.
 - 새로운 ViewType을 추가할 때도 기존 타입과의 처리 순서 의존성을 반드시 확인할 것.
+- `PuzzleBoardView.OnDestroy()`에서 `StopAllCoroutines()` 호출 — 파괴 중 코루틴 접근 크래시 방지.
 
 ### 좌표 변환 (GetLocalPos)
 - 사각형: 보드 중앙 기준 `(X - width/2, Y - height/2) × cellSize`

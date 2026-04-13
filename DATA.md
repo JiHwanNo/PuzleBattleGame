@@ -16,7 +16,21 @@ Rule JSON + Stage JSON
             → board.Initialize(gameSpec)
 ```
 
-**StageInjection**: 싱글톤. `MakeGameSpec(ruleAddress, stageAddress)`로 JSON 로드 후 `GetGameSpec()`으로 반환.
+**StageInjection**: 싱글톤. `MakeGameSpec(ruleAddress, stageAddress)`로 JSON 로드 후 `GetGameSpec()`으로 반환. 파싱 실패 시 `false` 반환 + `_gameSpec = null`.
+
+### 데이터 타입 주의 (struct vs class)
+| 타입 | 종류 | `== null` 가능 | 비고 |
+|------|------|:---:|------|
+| `GameRuleContainer` | class | O | JSON 파싱 실패 시 null 반환 |
+| `RuleData` | **struct** | X | 파싱 실패 시 기본값(zero) — 컨테이너(`GameRuleContainer`) null 체크로 대체 |
+| `ObjectiveData` | **struct** | X | |
+| `GameSpec` | class | O | |
+| `StageData` | class | O | JSON 파싱 실패 시 null 반환 |
+| `CellData` | class | O | |
+| `BlockData` | class | O | |
+| `InputRecord` | **struct** | X | |
+| `InputEndRecord` | **struct** | X | |
+| `ReplayData` | class | O | |
 
 ---
 
