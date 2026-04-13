@@ -7,7 +7,7 @@
     "_puzzleType_info": "1: ThreeMatch, 2: Link, 3: TapMatch",
     "boardShape": 1,
     "_boardShape_info": "1: Quadrangle, 2: Hexagon",
-    "timeLimit": 100,
+    "timeLimit": 60,
     "objectives": [
       {
         "_comment": "목표 점수 달성 조건",
