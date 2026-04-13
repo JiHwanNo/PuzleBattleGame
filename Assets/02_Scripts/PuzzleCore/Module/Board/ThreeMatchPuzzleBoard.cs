@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Puzzle.Core
 {
@@ -222,6 +221,7 @@ namespace Puzzle.Core
             var cellB = GetCell(second);
             if (cellA?.Block == null || cellB?.Block == null)
             {
+                Log($"[ThreeMatchBoard] 스왑 대상 셀에 블럭이 없습니다. first=({first.X},{first.Y}), second=({second.X},{second.Y})");
                 return;
             }
 
@@ -313,7 +313,14 @@ namespace Puzzle.Core
 
         private bool HasEmptyCell()
         {
-            return Cells.Values.Any(c => (c.CellType == CellType.Normal || c.CellType == CellType.Generator) && c.Block == null);
+            foreach (var c in Cells.Values)
+            {
+                if ((c.CellType == CellType.Normal || c.CellType == CellType.Generator) && c.Block == null)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private bool ProcessMatching()
@@ -516,8 +523,9 @@ namespace Puzzle.Core
                 int cmp = a.frame.CompareTo(b.frame);
                 return cmp != 0 ? cmp : a.orderIndex.CompareTo(b.orderIndex);
             });
-            var res = new List<BoardViewAction>(_views);
-            _views.Clear();
+            // 리스트 복사 대신 참조 스왑으로 GC 할당 방지
+            var res = _views;
+            _views = new List<BoardViewAction>();
             return res;
         }
 

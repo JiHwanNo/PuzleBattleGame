@@ -63,6 +63,24 @@ namespace Puzzle.Core
                 string json = File.ReadAllText(filePath);
                 ReplayData replayData = JsonUtility.FromJson<ReplayData>(json);
 
+                if (replayData == null)
+                {
+                    Debug.LogError($"[ReplayStorage] 리플레이 JSON 파싱 결과가 null입니다: {filePath}");
+                    return null;
+                }
+
+                if (replayData.inputs == null || replayData.inputEnds == null)
+                {
+                    Debug.LogError($"[ReplayStorage] 리플레이 데이터에 입력 기록이 누락되었습니다: {filePath}");
+                    return null;
+                }
+
+                if (string.IsNullOrEmpty(replayData.ruleAddress) || string.IsNullOrEmpty(replayData.stageAddress))
+                {
+                    Debug.LogError($"[ReplayStorage] 리플레이 데이터에 규칙/스테이지 주소가 누락되었습니다: {filePath}");
+                    return null;
+                }
+
                 Debug.Log($"리플레이 로드 완료: {filePath}");
                 return replayData;
             }

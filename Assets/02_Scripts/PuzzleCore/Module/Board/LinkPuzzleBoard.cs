@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Puzzle.Core
 {
@@ -106,7 +105,7 @@ namespace Puzzle.Core
                 // 되돌리기(Backtracking): 직전 노드로 마우스를 되돌렸을 경우
                 if (_linkPath.Count > 1 && _linkPath[_linkPath.Count - 2] == input)
                 {
-                    GridPos lastPos = _linkPath.Last();
+                    GridPos lastPos = _linkPath[_linkPath.Count - 1];
                     var lastCell = GetCell(lastPos);
                     lastCell?.Block?.SetState(BlockState.Idle);
                     _linkPath.RemoveAt(_linkPath.Count - 1);
@@ -115,8 +114,13 @@ namespace Puzzle.Core
             }
 
             // 3. 새 노드 연결 시도
-            GridPos currentPos = _linkPath.Last();
+            GridPos currentPos = _linkPath[_linkPath.Count - 1];
             var currentCell = GetCell(currentPos);
+            if (currentCell?.Block == null)
+            {
+                Log($"[LinkPuzzleBoard] 링크 경로의 마지막 셀({currentPos.X},{currentPos.Y})에 블럭이 없습니다.");
+                return;
+            }
 
             // 색상(ID) 동일 여부 체크
             if (currentCell.Block.GetBlockId() != targetCell.Block.GetBlockId()) return;
@@ -364,8 +368,9 @@ namespace Puzzle.Core
                 int cmp = a.frame.CompareTo(b.frame);
                 return cmp != 0 ? cmp : a.orderIndex.CompareTo(b.orderIndex);
             });
-            var res = new List<BoardViewAction>(_views);
-            _views.Clear();
+            // 리스트 복사 대신 참조 스왑으로 GC 할당 방지
+            var res = _views;
+            _views = new List<BoardViewAction>();
             return res;
         }
 

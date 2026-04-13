@@ -97,6 +97,12 @@ public class StageInjection
         if (ruleAsset != null)
         {
             GameRuleContainer ruleContainer = JsonUtility.FromJson<GameRuleContainer>(ruleAsset.text);
+            if (ruleContainer == null)
+            {
+                Debug.LogError($"[StageInjection] 규칙 JSON 파싱 실패: {ruleAddress}");
+                _gameSpec = null;
+                return false;
+            }
             _gameSpec.rule = ruleContainer.rule;
             _gameSpec.blocks = ruleContainer.blocks;
         }
@@ -112,6 +118,12 @@ public class StageInjection
         if (stageAsset != null)
         {
             _gameSpec.stageData = JsonUtility.FromJson<StageData>(stageAsset.text);
+            if (_gameSpec.stageData == null)
+            {
+                Debug.LogError($"[StageInjection] 스테이지 JSON 파싱 실패: {stageAddress}");
+                _gameSpec = null;
+                return false;
+            }
         }
         else
         {

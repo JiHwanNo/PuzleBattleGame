@@ -157,6 +157,9 @@ public class PuzzleBoardView : MonoBehaviour
 
     private void OnDestroy()
     {
+        StopAllCoroutines();
+        _isAnimating = false;
+
         if (_lineMaterial != null)
         {
             Destroy(_lineMaterial);
@@ -691,12 +694,17 @@ public class PuzzleBoardView : MonoBehaviour
         _isAnimating = false;
     }
 
+    /// <summary> ExecuteBatchMovement 내부에서 액션-뷰 매핑을 재사용하는 임시 리스트 (Dictionary 할당 방지) </summary>
+    private readonly List<BoardViewAction> _batchActions = new List<BoardViewAction>();
+    private readonly List<PuzzleBlockView> _batchViews = new List<PuzzleBlockView>();
+
     private System.Collections.IEnumerator ExecuteBatchMovement(List<BoardViewAction> moveActions)
     {
         int completedCount = 0;
         int totalCount = moveActions.Count;
 
-        Dictionary<BoardViewAction, PuzzleBlockView> actionToViewMap = new Dictionary<BoardViewAction, PuzzleBlockView>();
+        _batchActions.Clear();
+        _batchViews.Clear();
 
         // Move/Fall을 먼저 처리하여 기존 뷰를 _blockViews에서 제거한 뒤,
         // CreateAndFall을 처리해야 HandleImmediateDestroy가 이동 예정 블럭을 파괴하지 않음
@@ -707,7 +715,8 @@ public class PuzzleBoardView : MonoBehaviour
             {
                 if (_blockViews.TryGetValue(action.position, out PuzzleBlockView view))
                 {
-                    actionToViewMap[action] = view;
+                    _batchActions.Add(action);
+                    _batchViews.Add(view);
                     _blockViews.Remove(action.position);
                 }
             }
@@ -733,24 +742,25 @@ public class PuzzleBoardView : MonoBehaviour
                     if (bView != null)
                     {
                         bView.Initialize(action.blockData, action.position, this);
-                        actionToViewMap[action] = bView;
+                        _batchActions.Add(action);
+                        _batchViews.Add(bView);
                     }
                 }
             }
         }
 
-        foreach (var pair in actionToViewMap)
+        for (int i = 0; i < _batchActions.Count; i++)
         {
-            BoardViewAction action = pair.Key;
-            PuzzleBlockView view = pair.Value;
+            BoardViewAction action = _batchActions[i];
+            PuzzleBlockView view = _batchViews[i];
             GridPos to = action.targetPosition;
 
             _blockViews[to] = view;
 
             Vector3 targetPos = GetLocalPos(to);
-            System.Action onComplete = () => 
+            System.Action onComplete = () =>
             {
-                view.Initialize(view.GetBlockData(), to, this); 
+                view.Initialize(view.GetBlockData(), to, this);
                 completedCount++;
             };
 
@@ -758,13 +768,13 @@ public class PuzzleBoardView : MonoBehaviour
             {
                 view.PlayMoveAnimation(targetPos, onComplete);
             }
-            else 
+            else
             {
                 view.PlayFallAnimation(targetPos, onComplete);
             }
         }
 
-        int processedCount = actionToViewMap.Count;
+        int processedCount = _batchActions.Count;
         if (processedCount < totalCount)
         {
             completedCount += (totalCount - processedCount);

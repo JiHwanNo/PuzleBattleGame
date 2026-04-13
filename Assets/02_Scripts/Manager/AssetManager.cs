@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
-using System.Linq;
-
 /// <summary>
 /// Addressables 시스템을 이용해 게임 에셋의 로드 및 인스턴스화를 관리하는 싱글톤 클래스입니다.
 /// </summary>
@@ -132,6 +130,7 @@ public class AssetManager
     {
         if (string.IsNullOrEmpty(address))
         {
+            Debug.LogError($"[AssetManager] LoadAsset<{typeof(T).Name}> 호출 시 주소가 비어 있습니다.");
             return default;
         }
 
@@ -163,14 +162,23 @@ public class AssetManager
     /// <summary>
     /// 씬 전환 시 호출하여 Persistent로 등록되지 않은 에셋 캐시를 모두 해제합니다.
     /// </summary>
+    /// <summary> ReleaseAll() 내부에서 재사용하는 임시 리스트 (GC 할당 방지) </summary>
+    private readonly List<string> _releaseBuffer = new List<string>();
+
     internal void ReleaseAll()
     {
-        List<string> keysToRemove = _handlePacket.Keys
-            .Where(k => !_persistentAddresses.Contains(k))
-            .ToList();
-
-        foreach (string key in keysToRemove)
+        _releaseBuffer.Clear();
+        foreach (string key in _handlePacket.Keys)
         {
+            if (!_persistentAddresses.Contains(key))
+            {
+                _releaseBuffer.Add(key);
+            }
+        }
+
+        for (int i = 0; i < _releaseBuffer.Count; i++)
+        {
+            string key = _releaseBuffer[i];
             if (_handlePacket.TryGetValue(key, out AsyncOperationHandle handle))
             {
                 Addressables.Release(handle);

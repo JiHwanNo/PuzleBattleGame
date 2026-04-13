@@ -277,11 +277,18 @@ public class PuzzleGameController : MonoBehaviour
     /// </summary>
     private void SaveReplay()
     {
+        GameSpec spec = StageInjection.Instance.GetGameSpec();
+        if (spec == null)
+        {
+            Debug.LogError("[PuzzleGameController] GameSpec이 null이므로 리플레이를 저장할 수 없습니다.");
+            return;
+        }
+
         var replayData = new ReplayData
         {
             ruleAddress = StageInjection.Instance.GetRuleAddress(),
             stageAddress = StageInjection.Instance.GetStageAddress(),
-            randomSeed = StageInjection.Instance.GetGameSpec().randomSeed,
+            randomSeed = spec.randomSeed,
             inputs = _board.GetRecordedInputs(),
             inputEnds = _board.GetRecordedInputEnds(),
             recordedAt = DateTime.Now.ToString("o")

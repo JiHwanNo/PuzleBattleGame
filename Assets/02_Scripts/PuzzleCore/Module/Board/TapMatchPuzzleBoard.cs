@@ -356,8 +356,9 @@ namespace Puzzle.Core
                 int cmp = a.frame.CompareTo(b.frame);
                 return cmp != 0 ? cmp : a.orderIndex.CompareTo(b.orderIndex);
             });
-            var res = new List<BoardViewAction>(_views);
-            _views.Clear();
+            // 리스트 복사 대신 참조 스왑으로 GC 할당 방지
+            var res = _views;
+            _views = new List<BoardViewAction>();
             return res;
         }
 
