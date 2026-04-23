@@ -32,7 +32,9 @@
       "Bash(chmod +x \"/c/Users/jihwan/.dotnet/tools/ilspycmd.exe\")",
       "Bash(\"/c/Users/jihwan/.dotnet/tools/ilspycmd.exe\" \"C:/Users/jihwan/Documents/Game/PuzleBattleGame/Assets/Plugins/PuzleBattleShared.dll\")",
       "Read(//c/tmp/dllinspect/**)",
-      "Bash(sed -i 's/net9.0/net10.0/' dllinspect.csproj)"
+      "Bash(sed -i 's/net9.0/net10.0/' dllinspect.csproj)",
+      "Skill(update-config)",
+      "Bash(node *)"
     ]
   }
 }
