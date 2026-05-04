@@ -1,7 +1,7 @@
 # PuzleBattleGame - 코드 리뷰 체크리스트
 
 커밋 전 리뷰 에이전트가 **반드시 읽고 기준으로 삼는 문서**. 모든 항목은 위반 시 **수정 대상**이다.
-코딩 규칙은 `CLAUDE.md`, 아키텍처는 `ARCHITECTURE.md`, 세부 영역은 각 영역별 MD(`INGAME.md`, `DATA.md` 등)를 참조.
+코딩 규칙은 `../../CLAUDE.md`, 아키텍처는 `ARCHITECTURE.md`, 세부 영역은 각 영역별 MD(`INGAME.md`, `DATA.md` 등)를 참조.
 
 ---
 
@@ -15,7 +15,7 @@
 
 ---
 
-## 1. 코딩 규칙 (CLAUDE.md 준수)
+## 1. 코딩 규칙 (../../CLAUDE.md 준수)
 
 ### 1-1. 파일 및 인코딩
 - [ ] 새로 추가된 C# 파일은 **UTF-8 (BOM 포함)**.
@@ -120,7 +120,7 @@ public class ThreeMatchPuzzleBoard
 
 ---
 
-## 3. Known Pitfalls (CLAUDE.md 주의사항)
+## 3. Known Pitfalls (../../CLAUDE.md 주의사항)
 
 ### 3-1. struct vs class null 비교
 - [ ] 다음 타입은 **struct**이므로 `== null` 비교 **컴파일 에러**(CS0019):
@@ -188,7 +188,7 @@ if (ruleContainer == null) { ... }
 
 | 상황 | 읽을 곳 |
 |------|---------|
-| 프로젝트 코딩 규칙 전체 | `CLAUDE.md` |
+| 프로젝트 코딩 규칙 전체 | `../../CLAUDE.md` |
 | MVC 분리/리플레이/게임 흐름 | `ARCHITECTURE.md` |
 | 게임 루프/뷰 동기화/블럭 | `INGAME.md` |
 | 데이터 타입/JSON | `DATA.md` |

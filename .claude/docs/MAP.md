@@ -8,7 +8,7 @@
 
 | 문서 | 내용 | 언제 읽을까? |
 |------|------|-------------|
-| `CLAUDE.md` | 코딩 규칙, 주의사항(Known Pitfalls), 작업별 참고 링크 | 항상 (기본 규칙) |
+| `../../CLAUDE.md` | 코딩 규칙, 주의사항(Known Pitfalls), 작업별 참고 링크 | 항상 (기본 규칙) |
 | `ARCHITECTURE.md` | MVC, 데이터 흐름, 리플레이, 게임 흐름, 폴더 구조 | 아키텍처 이해 시 |
 | `CONVENTIONS.md` | 코드 리뷰 체크리스트, 위반 예시, 수정 가이드 | 커밋 전 리뷰 시 필독 |
 | `INGAME.md` | 게임 루프, 보드 상태, 블럭, 매칭, 뷰 동기화, 애니메이션, 리플레이 | 인게임 퍼즐 작업 시 |
@@ -16,7 +16,7 @@
 | `UI.md` | 도메인 시스템, 팝업/탭 생명주기, UIButton, 추가 방법 | UI 작업 시 |
 | `SCENE.md` | 씬 전환, SharedScene, 매니저, AssetManager, PoolManager | 인프라 작업 시 |
 | `SERVER.md` | 서버 통신, 공유 DLL, 네트워크 레이어, API 연동 | 서버 API 작업 시 |
-| `CHANGELOG.md` | 전체 변경 이력 | 이전 작업 맥락 파악 시 |
+| `../../CHANGELOG.md` | 전체 변경 이력 | 이전 작업 맥락 파악 시 |
 
 ---
 
@@ -24,12 +24,12 @@
 
 | 상황 | 읽을 곳 |
 |------|---------|
-| 정렬 변경 후 버그 | `CLAUDE.md` → "주의사항 - 정렬 안정성" |
+| 정렬 변경 후 버그 | `../../CLAUDE.md` → "주의사항 - 정렬 안정성" |
 | 뷰 블럭 미씽/소실 | `INGAME.md` → "ExecuteBatchMovement 처리 순서 규칙" |
-| LINQ 제거 최적화 | `CLAUDE.md` → "주의사항 - 최적화 체크리스트" |
-| 씬 전환 후 에셋 미씽 | `CLAUDE.md` → "주의사항 - Pool/Addressable 생명주기" |
-| struct null 비교 에러 | `CLAUDE.md` → "주의사항 - 데이터 타입" |
-| Model에서 Debug.Log 사용 | `CLAUDE.md` → "주의사항 - Model 레이어 로깅" |
+| LINQ 제거 최적화 | `../../CLAUDE.md` → "주의사항 - 최적화 체크리스트" |
+| 씬 전환 후 에셋 미씽 | `../../CLAUDE.md` → "주의사항 - Pool/Addressable 생명주기" |
+| struct null 비교 에러 | `../../CLAUDE.md` → "주의사항 - 데이터 타입" |
+| Model에서 Debug.Log 사용 | `../../CLAUDE.md` → "주의사항 - Model 레이어 로깅" |
 | 데이터 타입 확인 | `DATA.md` → "데이터 타입 주의" |
 
 ---

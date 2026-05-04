@@ -1,6 +1,6 @@
 # PuzleBattleGame 변경 이력 (Changelog)
 
-최근 변경만 기록. 아키텍처/구조 정보는 각 참고 문서(`INGAME.md`, `DATA.md`, `SCENE.md`, `UI.md`) 참고.
+최근 변경만 기록. 아키텍처/구조 정보는 `.claude/docs/`의 각 참고 문서(`INGAME.md`, `DATA.md`, `SCENE.md`, `UI.md`) 참고.
 
 ---
 
