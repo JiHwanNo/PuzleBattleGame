@@ -24,6 +24,21 @@ public class UIButton : MonoBehaviour
     private string _callbackValue;
 
     /// <summary>
+    /// 버튼 콜백 정보를 런타임에서 재설정합니다.
+    /// </summary>
+    public void Configure(MonoBehaviour root, string callbackName, string callbackValue = null)
+    {
+        _root = root;
+        _callbackName = callbackName;
+        _callbackValue = callbackValue;
+
+        if (_unityButton == null)
+        {
+            _unityButton = GetComponentInChildren<Button>(true);
+        }
+    }
+
+    /// <summary>
     /// 버튼 클릭 이벤트가 발생했을 때 호출되어 root 객체에 메시지를 전송합니다.
     /// </summary>
     public void OnClickEvent()

@@ -1,7 +1,5 @@
-using System.IO;
 using Puzzle.Core;
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
 /// 게임 준비(Ready) 팝업.
@@ -9,66 +7,51 @@ using UnityEngine.UI;
 /// </summary>
 public class PopupReady : PopupHandler
 {
+    private const string StagePath = "Stage";
+
+    protected override void Awake()
+    {
+        base.Awake();
+    }
 
     /// <summary>
-    /// 랜덤 퍼즐 모드 선택에 사용할 규칙 에셋 주소 목록입니다.
+    /// 퍼즐 모드 버튼 클릭 시 지정된 퍼즐로 게임 데이터를 준비하고 게임 씬으로 이동합니다.
     /// </summary>
-    private static readonly string[] RulePaths = new string[]
+    private void OnClickStartButton(string val)
     {
-        "LinkMatchRule",
-        "ThreeMatchRule",
-        "TapMatchRule"
-    };
+        if (!TryParsePuzzleType(val, out PuzzleType puzzleType))
+        {
+            Debug.LogError($"[PopupReady] 알 수 없는 퍼즐 타입입니다: {val}");
+            return;
+        }
 
-    /// <summary>
-    /// 시작 버튼 클릭 시 랜덤 퍼즐 모드로 게임 데이터를 준비하고 게임 씬으로 이동합니다.
-    /// Link, 3매치, 탭 블라스트 중 하나가 랜덤 선택되며, 제한 시간은 100초입니다.
-    /// </summary>
-    private void OnClickStart()
-    {
-        // 3가지 퍼즐 모드 중 랜덤 선택
-        string rulePath = RulePaths[Random.Range(0, RulePaths.Length)];
-        string stagePath = "Stage";
-
-        if (!StageInjection.Instance.MakeGameSpec(rulePath, stagePath))
+        string ruleAddress = GetRuleAddress(puzzleType);
+        if (!StageInjection.Instance.MakeGameSpec(ruleAddress, StagePath))
         {
             Debug.LogError("[PopupReady] GameSpec 준비에 실패했습니다.");
             return;
         }
 
-        Debug.Log($"[PopupReady] 선택된 퍼즐 모드: {rulePath}");
+        StageInjection.Instance.SetReplayData(null);
+        Debug.Log($"[PopupReady] 선택된 퍼즐 모드: {ruleAddress}");
         Main.Instance.MoveScene(SceneEnum.LobbyScene, SceneEnum.GameScene);
     }
 
     /// <summary>
-    /// 리플레이 테스트 버튼 클릭 시 가장 최근 리플레이를 로드하고 게임을 시작합니다.
-    /// 유저는 정상 플레이하며, 상대방 보드에 리플레이가 재생됩니다.
+    /// 퍼즐 모드별 리플레이 버튼 클릭 시 해당 타입의 가장 최근 리플레이를 실행합니다.
     /// </summary>
-    private void OnClickReplay()
+    private void OnClickReplayButton(string val)
     {
-        // 가장 최근 리플레이 파일 탐색
-        string replayDir = ReplayStorage.GetReplayDirectoryPath();
-        if (!Directory.Exists(replayDir))
+        if (!TryParsePuzzleType(val, out PuzzleType puzzleType))
         {
-            Debug.LogError("리플레이 디렉터리가 존재하지 않습니다.");
+            Debug.LogError($"[PopupReady] 알 수 없는 퍼즐 타입입니다: {val}");
             return;
         }
 
-        string[] files = Directory.GetFiles(replayDir, "replay_*.json");
-        if (files.Length == 0)
-        {
-            Debug.LogError("저장된 리플레이 파일이 없습니다.");
-            return;
-        }
-
-        // 파일명 기준 정렬하여 가장 최근 파일 선택
-        System.Array.Sort(files);
-        string latestFile = files[files.Length - 1];
-
-        ReplayData replayData = ReplayStorage.Load(latestFile);
+        ReplayData replayData = ReplayStorage.LoadLatest(puzzleType);
         if (replayData == null)
         {
-            Debug.LogError("리플레이 데이터 로드에 실패했습니다.");
+            Debug.LogError("리플레이 데이터가 없습니다!");
             return;
         }
 
@@ -91,4 +74,34 @@ public class PopupReady : PopupHandler
     {
         ClosePopup();
     }
+
+    private bool TryParsePuzzleType(string val, out PuzzleType puzzleType)
+    {
+        if (!int.TryParse(val, out int puzzleTypeValue))
+        {
+            puzzleType = PuzzleType.None;
+            return false;
+        }
+
+        puzzleType = (PuzzleType)puzzleTypeValue;
+        return puzzleType == PuzzleType.ThreeMatch ||
+               puzzleType == PuzzleType.Link ||
+               puzzleType == PuzzleType.TapMatch;
+    }
+
+    private string GetRuleAddress(PuzzleType puzzleType)
+    {
+        switch (puzzleType)
+        {
+            case PuzzleType.ThreeMatch:
+                return "ThreeMatchRule";
+            case PuzzleType.Link:
+                return "LinkMatchRule";
+            case PuzzleType.TapMatch:
+                return "TapMatchRule";
+            default:
+                return string.Empty;
+        }
+    }
+
 }

@@ -6,7 +6,7 @@ namespace Puzzle.Core
 {
     /// <summary>
     /// 리플레이 데이터를 로컬 파일 시스템에 JSON 형식으로 저장하고 불러오는 유틸리티 클래스입니다.
-    /// 저장 경로: Application.persistentDataPath/Replay/
+    /// 저장 경로: Application.persistentDataPath/Replay/{PuzzleType}/
     /// </summary>
     public static class ReplayStorage
     {
@@ -22,7 +22,7 @@ namespace Puzzle.Core
         {
             try
             {
-                string directoryPath = GetReplayDirectoryPath();
+                string directoryPath = GetReplayDirectoryPath(GetPuzzleType(replayData.ruleAddress));
                 if (!Directory.Exists(directoryPath))
                 {
                     Directory.CreateDirectory(directoryPath);
@@ -43,6 +43,41 @@ namespace Puzzle.Core
                 Debug.LogError($"리플레이 저장 실패: {e.Message}");
                 return null;
             }
+        }
+
+        /// <summary>
+        /// 지정한 퍼즐 타입의 가장 최근 리플레이 데이터를 불러옵니다.
+        /// </summary>
+        public static ReplayData LoadLatest(PuzzleType puzzleType)
+        {
+            string latestFile = GetLatestReplayFilePath(puzzleType);
+            if (string.IsNullOrEmpty(latestFile))
+            {
+                return null;
+            }
+
+            return Load(latestFile);
+        }
+
+        /// <summary>
+        /// 지정한 퍼즐 타입의 가장 최근 리플레이 파일 경로를 반환합니다.
+        /// </summary>
+        public static string GetLatestReplayFilePath(PuzzleType puzzleType)
+        {
+            string replayDir = GetReplayDirectoryPath(puzzleType);
+            if (!Directory.Exists(replayDir))
+            {
+                return null;
+            }
+
+            string[] files = Directory.GetFiles(replayDir, "replay_*.json");
+            if (files.Length == 0)
+            {
+                return null;
+            }
+
+            Array.Sort(files);
+            return files[files.Length - 1];
         }
 
         /// <summary>
@@ -103,6 +138,44 @@ namespace Puzzle.Core
 #else
             return Path.Combine(Application.persistentDataPath, ReplayDirectory);
 #endif
+        }
+
+        /// <summary>
+        /// 지정한 퍼즐 타입의 리플레이 저장 디렉터리 전체 경로를 반환합니다.
+        /// </summary>
+        public static string GetReplayDirectoryPath(PuzzleType puzzleType)
+        {
+            return Path.Combine(GetReplayDirectoryPath(), GetDirectoryName(puzzleType));
+        }
+
+        private static PuzzleType GetPuzzleType(string ruleAddress)
+        {
+            switch (ruleAddress)
+            {
+                case "ThreeMatchRule":
+                    return PuzzleType.ThreeMatch;
+                case "LinkMatchRule":
+                    return PuzzleType.Link;
+                case "TapMatchRule":
+                    return PuzzleType.TapMatch;
+                default:
+                    return PuzzleType.None;
+            }
+        }
+
+        private static string GetDirectoryName(PuzzleType puzzleType)
+        {
+            switch (puzzleType)
+            {
+                case PuzzleType.ThreeMatch:
+                    return "ThreeMatch";
+                case PuzzleType.Link:
+                    return "Link";
+                case PuzzleType.TapMatch:
+                    return "TapMatch";
+                default:
+                    return "Unknown";
+            }
         }
     }
 }
